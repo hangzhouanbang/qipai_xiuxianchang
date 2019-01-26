@@ -1,0 +1,125 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/qipai_xiuxianchang
+
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+          zk-nodes: localhost:2181
+          minPartitionCount: 1
+          autoCreateTopics: true
+          autoAddPartitions: false
+        bindings:
+          ruianGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
+          fangpaoGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
+          wenzhouGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
+          dianpaoGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
+          wenzhouShuangkouGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
+                  
+      bindings:
+        ruianGameRoom:
+          destination: ruianGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        fangpaoGameRoom:
+          destination: fangpaoGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        wenzhouGameRoom:
+          destination: wenzhouGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        dianpaoGameRoom:
+          destination: dianpaoGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        wenzhouShuangkouGameRoom:
+          destination: wenzhouShuangkouGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        gameServer:
+          destination: gameServer
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        memberLoginLimitRecord:
+          destination: memberLoginLimitRecord
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        members:
+          destination: members
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+  application:
+    name: qipai-xiuxianchang
+server:
+  port: 101
+  
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8761/eureka/
+
+filepath:
+  snapshotFileBasePath: /data/app/qipai_xiuxianchang/snapshot
+  jFileBasePath: /data/app/qipai_xiuxianchang/journal
