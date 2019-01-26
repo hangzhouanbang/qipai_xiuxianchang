@@ -64,13 +64,13 @@ public class GameService {
 		}
 
 		if (lawNames.contains("er")) {
-			gameRoom.setPlayersCount(2);
+			gameRoom.setPlayersCountPerJu(2);
 		} else if (lawNames.contains("sanr")) {
-			gameRoom.setPlayersCount(3);
+			gameRoom.setPlayersCountPerJu(3);
 		} else if (lawNames.contains("sir")) {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		} else {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		}
 
 		gameRoom.setDeadlineTime(System.currentTimeMillis() + 2 * 60 * 60 * 1000);
@@ -104,13 +104,13 @@ public class GameService {
 		}
 
 		if (lawNames.contains("er")) {
-			gameRoom.setPlayersCount(2);
+			gameRoom.setPlayersCountPerJu(2);
 		} else if (lawNames.contains("sanr")) {
-			gameRoom.setPlayersCount(3);
+			gameRoom.setPlayersCountPerJu(3);
 		} else if (lawNames.contains("sir")) {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		} else {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		}
 
 		gameRoom.setDeadlineTime(System.currentTimeMillis() + 2 * 60 * 60 * 1000);
@@ -144,13 +144,13 @@ public class GameService {
 		}
 
 		if (lawNames.contains("er")) {
-			gameRoom.setPlayersCount(2);
+			gameRoom.setPlayersCountPerJu(2);
 		} else if (lawNames.contains("sanr")) {
-			gameRoom.setPlayersCount(3);
+			gameRoom.setPlayersCountPerJu(3);
 		} else if (lawNames.contains("sir")) {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		} else {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		}
 
 		gameRoom.setDeadlineTime(System.currentTimeMillis() + 2 * 60 * 60 * 1000);
@@ -184,13 +184,13 @@ public class GameService {
 		}
 
 		if (lawNames.contains("er")) {
-			gameRoom.setPlayersCount(2);
+			gameRoom.setPlayersCountPerJu(2);
 		} else if (lawNames.contains("sanr")) {
-			gameRoom.setPlayersCount(3);
+			gameRoom.setPlayersCountPerJu(3);
 		} else if (lawNames.contains("sir")) {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		} else {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		}
 
 		gameRoom.setDeadlineTime(System.currentTimeMillis() + 2 * 60 * 60 * 1000);
@@ -224,13 +224,13 @@ public class GameService {
 		}
 
 		if (lawNames.contains("er")) {
-			gameRoom.setPlayersCount(2);
+			gameRoom.setPlayersCountPerJu(2);
 		} else if (lawNames.contains("sanr")) {
-			gameRoom.setPlayersCount(3);
+			gameRoom.setPlayersCountPerJu(3);
 		} else if (lawNames.contains("sir")) {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		} else {
-			gameRoom.setPlayersCount(4);
+			gameRoom.setPlayersCountPerJu(4);
 		}
 
 		gameRoom.setDeadlineTime(System.currentTimeMillis() + 2 * 60 * 60 * 1000);
@@ -240,43 +240,66 @@ public class GameService {
 		return gameRoom;
 	}
 
+	/**
+	 * 服务器上线
+	 */
 	public void onlineServer(GameServer gameServer) {
 		gameServer.setOnlineTime(System.currentTimeMillis());
 		gameServerDao.save(gameServer);
 	}
 
+	/**
+	 * 服务器下线
+	 */
 	public void offlineServer(String[] gameServerIds) {
 		gameServerDao.remove(gameServerIds);
 	}
 
+	/**
+	 * 保存游戏房间
+	 */
 	public void saveGameRoom(GameRoom gameRoom) {
 		gameRoomDao.save(gameRoom);
 	}
 
+	/**
+	 * 查询未满的游戏房间
+	 */
 	public GameRoom findNotFullGameRoom(Game game) {
 		return gameRoomDao.findNotFullGameRoom(game);
 	}
 
-	public void finishGameRoom(String id) {
-		gameRoomDao.updateGameRoomFinished(id, true);
-	}
-
+	/**
+	 * 批量终结游戏房间
+	 */
 	public void expireGameRoom(List<String> ids) {
 		gameRoomDao.updateGameRoomFinished(ids, true);
 	}
 
-	public void createGameRoom(GameRoom gameRoom) {
-		gameRoomDao.save(gameRoom);
-		MemberGameRoom mgr = new MemberGameRoom();
-		mgr.setGameRoom(gameRoom);
-		memberGameRoomDao.save(mgr);
+	public void updateGameRoomFinishedByGame(Game game, String serverGameId, boolean finished) {
+		gameRoomDao.updateGameRoomFinishedByGame(game, serverGameId, finished);
 	}
 
+	/**
+	 * 创建游戏房间
+	 */
+	public void createGameRoom(GameRoom gameRoom, String memberId) {
+		MemberGameRoom mgr = new MemberGameRoom();
+		mgr.setMemberId(memberId);
+		mgr.setGameRoom(gameRoom);
+		memberGameRoomDao.save(mgr);
+
+		gameRoomDao.updateGameRoomPlayersCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() + 1, false);
+	}
+
+	/**
+	 * 加入游戏房间
+	 */
 	public void joinGameRoom(GameRoom gameRoom, String memberId) {
-		if (gameRoom.getPanCountPerJu() > gameRoom.getPlayersCount() + 1) {
-			gameRoomDao.updateGameRoomPlayerCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() + 1, false);
+		if (gameRoom.getPlayersCountPerJu() > gameRoom.getPlayersCount() + 1) {
+			gameRoomDao.updateGameRoomPlayersCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() + 1, false);
 		} else {
-			gameRoomDao.updateGameRoomPlayerCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() + 1, true);
+			gameRoomDao.updateGameRoomPlayersCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() + 1, true);
 		}
 		MemberGameRoom mgr = new MemberGameRoom();
 		mgr.setGameRoom(gameRoom);
@@ -284,16 +307,27 @@ public class GameService {
 		memberGameRoomDao.save(mgr);
 	}
 
+	/**
+	 * 离开游戏房间
+	 */
+	public void leaveGameRoom(Game game, String serverGameId, String memberId) {
+		GameRoom gameRoom = gameRoomDao.findGameRoomByGame(game, serverGameId);
+		gameRoomDao.updateGameRoomPlayersCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() - 1, false);
+		memberGameRoomDao.remove(game, serverGameId, memberId);
+	}
+
+	/**
+	 * 查询到期的游戏房间
+	 */
 	public List<GameRoom> findExpireGameRoom(long deadlineTime) {
 		return gameRoomDao.findExpireGameRoom(deadlineTime, false);
 	}
 
+	/**
+	 * 删除玩家游戏房间
+	 */
 	public void finishMemberGameRoom(Game game, String serverGameId) {
 		memberGameRoomDao.remove(game, serverGameId);
-	}
-
-	public void removeMemberGameRoomByMemberId(Game game, String serverGameId, String memberId) {
-		memberGameRoomDao.remove(game, serverGameId, memberId);
 	}
 
 	public GameLaw findGameLaw(Game game, String lawName) {

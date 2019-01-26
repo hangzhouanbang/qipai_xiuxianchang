@@ -35,14 +35,13 @@ public class MemberMsgReceiver {
 		if ("newMember".equals(msg)) {
 			memberAuthQueryService.insertMember(member);
 			// 创建账户
-			CreateGoldAccountResult result = null;
 			try {
-				result = memberGoldCmdService.createGoldAccountForMember(member.getId(), 20000, "new member",
-						System.currentTimeMillis());
+				CreateGoldAccountResult result = memberGoldCmdService.createGoldAccountForMember(member.getId(), 20000,
+						"new member", System.currentTimeMillis());
+				memberGoldQueryService.createMemberGoldAccount(result);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			memberGoldQueryService.createMemberGoldAccount(result);
 		}
 		if ("update member info".equals(msg)) {
 			memberAuthQueryService.updateMemberBaseInfo(member);

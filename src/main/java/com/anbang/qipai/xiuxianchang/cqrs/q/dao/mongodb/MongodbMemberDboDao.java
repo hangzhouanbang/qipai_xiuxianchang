@@ -33,9 +33,21 @@ public class MongodbMemberDboDao implements MemberDboDao {
 	@Override
 	public List<MemberDbo> findAllMembers() {
 		Query query = new Query();
-		Update update = new Update();
-		update.set("_class", "com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberDbo");
-		mongoTemplate.updateMulti(query, update, "memberDbo");
+		Update update1 = new Update();
+		update1.set("_class", "com.anbang.qipai.xiuxianchang.plan.bean.games.GameLaw");
+		mongoTemplate.updateMulti(query, update1, "gameLaw");
+
+		Update update2 = new Update();
+		update2.set("_class", "com.anbang.qipai.xiuxianchang.plan.bean.games.LawsMutexGroup");
+		mongoTemplate.updateMulti(query, update2, "lawsMutexGroup");
+
+		Update update3 = new Update();
+		update3.set("_class", "com.anbang.qipai.xiuxianchang.plan.bean.games.GameServer");
+		mongoTemplate.updateMulti(query, update3, "gameServer");
+
+		Update update4 = new Update();
+		update4.set("_class", "com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberDbo");
+		mongoTemplate.updateMulti(query, update4, "memberDbo");
 		return mongoTemplate.find(query, MemberDbo.class);
 	}
 

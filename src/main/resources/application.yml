@@ -110,10 +110,45 @@ spring:
           consumer:
             concurrency: 1
             partitioned: false
+        ruianMajiangResult:
+          destination: ruianMajiangResult
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        fangpaoMajiangResult:
+          destination: fangpaoMajiangResult
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        wenzhouMajiangResult:
+          destination: wenzhouMajiangResult
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        dianpaoMajiangResult:
+          destination: dianpaoMajiangResult
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        wenzhouShuangkouResult:
+          destination: wenzhouShuangkouResult
+          group: qipai_xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
   application:
     name: qipai-xiuxianchang
 server:
-  port: 101
+  port: 84
   
 eureka:
   client:

@@ -14,7 +14,7 @@ public class GameRoom {
 	private String id;
 	private Game game;// 游戏
 	private int playersCount;// 当前人数
-	private int panCountPerJu;// 开局人数
+	private int playersCountPerJu;// 开局人数
 	private boolean full;// 人满
 	private List<GameLaw> laws;// 玩法
 	private ServerGame serverGame;
@@ -62,12 +62,12 @@ public class GameRoom {
 		this.playersCount = playersCount;
 	}
 
-	public int getPanCountPerJu() {
-		return panCountPerJu;
+	public int getPlayersCountPerJu() {
+		return playersCountPerJu;
 	}
 
-	public void setPanCountPerJu(int panCountPerJu) {
-		this.panCountPerJu = panCountPerJu;
+	public void setPlayersCountPerJu(int playersCountPerJu) {
+		this.playersCountPerJu = playersCountPerJu;
 	}
 
 	public boolean isFull() {

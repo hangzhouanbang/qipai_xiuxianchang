@@ -11,9 +11,11 @@ public interface GameRoomDao {
 
 	void updateGameRoomFinished(List<String> ids, boolean finished);
 
-	void updateGameRoomFinished(String id, boolean finished);
+	void updateGameRoomFinishedByGame(Game game, String serverGameId, boolean finished);
 
-	void updateGameRoomPlayerCountAndFull(String id, int playerCount, boolean full);
+	void updateGameRoomPlayersCountAndFull(String id, int playersCount, boolean full);
+
+	GameRoom findGameRoomByGame(Game game, String gameId);
 
 	GameRoom findNotFullGameRoom(Game game);
 

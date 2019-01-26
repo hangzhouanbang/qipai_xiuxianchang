@@ -11,7 +11,6 @@ import org.eclipse.jetty.client.api.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomHasExistAlreadyException;
@@ -86,7 +85,6 @@ public class GamePlayController {
 	 * 加入瑞安麻将房间
 	 */
 	@RequestMapping(value = "/join_ramj_room")
-	@ResponseBody
 	public CommonVO joinRamjRoom(String token) {
 		CommonVO vo = new CommonVO();
 		String memberId = memberAuthService.getMemberIdBySessionId(token);
@@ -192,7 +190,7 @@ public class GamePlayController {
 				vo.setMsg("GameRoomHasExistAlreadyException");
 				return vo;
 			}
-			gameService.createGameRoom(gameRoom);
+			gameService.createGameRoom(gameRoom, memberId);
 			Map data = new HashMap();
 			data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
 			data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
@@ -200,6 +198,8 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
+			ruianGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
+					(String) data.get("gameId"), (String) data.get("game"));
 			return vo;
 		}
 		// 全部失败
@@ -212,7 +212,6 @@ public class GamePlayController {
 	 * 加入放炮麻将房间
 	 */
 	@RequestMapping(value = "/join_fpmj_room")
-	@ResponseBody
 	public CommonVO joinFpmjRoom(String token) {
 		CommonVO vo = new CommonVO();
 		String memberId = memberAuthService.getMemberIdBySessionId(token);
@@ -320,7 +319,7 @@ public class GamePlayController {
 				vo.setMsg("GameRoomHasExistAlreadyException");
 				return vo;
 			}
-			gameService.createGameRoom(gameRoom);
+			gameService.createGameRoom(gameRoom, memberId);
 			Map data = new HashMap();
 			data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
 			data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
@@ -328,6 +327,8 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
+			fangpaoGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
+					(String) data.get("gameId"), (String) data.get("game"));
 			return vo;
 		}
 		// 全部失败
@@ -340,7 +341,6 @@ public class GamePlayController {
 	 * 加入温州麻将房间
 	 */
 	@RequestMapping(value = "/join_wzmj_room")
-	@ResponseBody
 	public CommonVO joinWzmjRoom(String token) {
 		CommonVO vo = new CommonVO();
 		String memberId = memberAuthService.getMemberIdBySessionId(token);
@@ -450,7 +450,7 @@ public class GamePlayController {
 				vo.setMsg("GameRoomHasExistAlreadyException");
 				return vo;
 			}
-			gameService.createGameRoom(gameRoom);
+			gameService.createGameRoom(gameRoom, memberId);
 			Map data = new HashMap();
 			data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
 			data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
@@ -458,6 +458,8 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
+			wenzhouGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
+					(String) data.get("gameId"), (String) data.get("game"));
 			return vo;
 		}
 		// 全部失败
@@ -470,7 +472,6 @@ public class GamePlayController {
 	 * 加入点炮麻将房间
 	 */
 	@RequestMapping(value = "/join_dpmj_room")
-	@ResponseBody
 	public CommonVO joinDpmjRoom(String token) {
 		CommonVO vo = new CommonVO();
 		String memberId = memberAuthService.getMemberIdBySessionId(token);
@@ -580,7 +581,7 @@ public class GamePlayController {
 				vo.setMsg("GameRoomHasExistAlreadyException");
 				return vo;
 			}
-			gameService.createGameRoom(gameRoom);
+			gameService.createGameRoom(gameRoom, memberId);
 			Map data = new HashMap();
 			data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
 			data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
@@ -588,6 +589,8 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
+			dianpaoGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
+					(String) data.get("gameId"), (String) data.get("game"));
 			return vo;
 		}
 		// 全部失败
@@ -600,7 +603,6 @@ public class GamePlayController {
 	 * 加入温州双扣房间
 	 */
 	@RequestMapping(value = "/join_wzsk_room")
-	@ResponseBody
 	public CommonVO joinWzskRoom(String token) {
 		CommonVO vo = new CommonVO();
 		String memberId = memberAuthService.getMemberIdBySessionId(token);
@@ -710,7 +712,7 @@ public class GamePlayController {
 				vo.setMsg("GameRoomHasExistAlreadyException");
 				return vo;
 			}
-			gameService.createGameRoom(gameRoom);
+			gameService.createGameRoom(gameRoom, memberId);
 			Map data = new HashMap();
 			data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
 			data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
@@ -718,6 +720,8 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
+			wenzhouShuangkouGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
+					(String) data.get("gameId"), (String) data.get("game"));
 			return vo;
 		}
 		// 全部失败
