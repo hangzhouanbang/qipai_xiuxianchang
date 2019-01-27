@@ -34,6 +34,8 @@ public class RamjLawsFB {
 				panshu = "4";
 			} else if (lawName.equals("slj")) {// 十六局
 				panshu = "16";
+			} else if (lawName.equals("yj")) {// 一局
+				panshu = "1";
 			} else if (lawName.equals("er")) {// 二人
 				renshu = "2";
 			} else if (lawName.equals("sanr")) {// 三人

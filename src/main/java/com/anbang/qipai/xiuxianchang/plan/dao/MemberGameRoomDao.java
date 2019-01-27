@@ -11,4 +11,6 @@ public interface MemberGameRoomDao {
 
 	void remove(Game game, String serverGameId);
 
+	MemberGameRoom findByGameAndMemberId(Game game, String gameId, String memberId);
+
 }

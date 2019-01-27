@@ -17,16 +17,12 @@ import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldAccountDbo;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberAuthQueryService;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
 import com.anbang.qipai.xiuxianchang.plan.bean.MemberLoginLimitRecord;
-import com.anbang.qipai.xiuxianchang.plan.service.MemberAuthService;
 import com.anbang.qipai.xiuxianchang.plan.service.MemberLoginLimitRecordService;
 import com.anbang.qipai.xiuxianchang.web.vo.CommonVO;
 
 @RestController
 @RequestMapping("/member")
 public class MemberController {
-
-	@Autowired
-	private MemberAuthService memberAuthService;
 
 	@Autowired
 	private MemberLoginLimitRecordService memberLoginLimitRecordService;
@@ -44,14 +40,8 @@ public class MemberController {
 	 * 查询玩家金币
 	 */
 	@RequestMapping("/account_info")
-	public CommonVO accountInfo(String token) {
+	public CommonVO accountInfo(String memberId) {
 		CommonVO vo = new CommonVO();
-		String memberId = memberAuthService.getMemberIdBySessionId(token);
-		if (memberId == null) {
-			vo.setSuccess(false);
-			vo.setMsg("invalid token");
-			return vo;
-		}
 		MemberLoginLimitRecord loginLimitRecord = memberLoginLimitRecordService.findByMemberId(memberId, true);
 		if (loginLimitRecord != null) {
 			vo.setSuccess(false);

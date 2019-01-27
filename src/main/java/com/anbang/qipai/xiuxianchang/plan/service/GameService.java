@@ -265,7 +265,7 @@ public class GameService {
 	/**
 	 * 查询未满的游戏房间
 	 */
-	public GameRoom findNotFullGameRoom(Game game) {
+	public List<GameRoom> findNotFullGameRoom(Game game) {
 		return gameRoomDao.findNotFullGameRoom(game);
 	}
 
@@ -289,6 +289,7 @@ public class GameService {
 		mgr.setGameRoom(gameRoom);
 		memberGameRoomDao.save(mgr);
 
+		gameRoomDao.updateGameRoomServerGameId(gameRoom.getId(), gameRoom.getServerGame().getGameId());
 		gameRoomDao.updateGameRoomPlayersCountAndFull(gameRoom.getId(), gameRoom.getPlayersCount() + 1, false);
 	}
 
@@ -328,6 +329,10 @@ public class GameService {
 	 */
 	public void finishMemberGameRoom(Game game, String serverGameId) {
 		memberGameRoomDao.remove(game, serverGameId);
+	}
+
+	public MemberGameRoom findByGameAndMemberId(Game game, String gameId, String memberId) {
+		return memberGameRoomDao.findByGameAndMemberId(game, gameId, memberId);
 	}
 
 	public GameLaw findGameLaw(Game game, String lawName) {

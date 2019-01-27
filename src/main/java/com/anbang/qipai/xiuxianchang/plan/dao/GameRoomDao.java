@@ -13,11 +13,13 @@ public interface GameRoomDao {
 
 	void updateGameRoomFinishedByGame(Game game, String serverGameId, boolean finished);
 
+	void updateGameRoomServerGameId(String id, String serverGameId);
+
 	void updateGameRoomPlayersCountAndFull(String id, int playersCount, boolean full);
 
 	GameRoom findGameRoomByGame(Game game, String gameId);
 
-	GameRoom findNotFullGameRoom(Game game);
+	List<GameRoom> findNotFullGameRoom(Game game);
 
 	List<GameRoom> findExpireGameRoom(long deadlineTime, boolean finished);
 }

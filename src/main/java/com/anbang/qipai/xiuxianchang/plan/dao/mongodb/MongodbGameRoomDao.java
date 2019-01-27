@@ -54,11 +54,11 @@ public class MongodbGameRoomDao implements GameRoomDao {
 	}
 
 	@Override
-	public GameRoom findNotFullGameRoom(Game game) {
+	public List<GameRoom> findNotFullGameRoom(Game game) {
 		Query query = new Query();
 		query.addCriteria(Criteria.where("game").is(game));
 		query.addCriteria(Criteria.where("full").is(false));
-		return mongoTemplate.findOne(query, GameRoom.class);
+		return mongoTemplate.find(query, GameRoom.class);
 	}
 
 	@Override
@@ -75,6 +75,15 @@ public class MongodbGameRoomDao implements GameRoomDao {
 		query.addCriteria(Criteria.where("game").is(game));
 		query.addCriteria(Criteria.where("serverGame.gameId").is(gameId));
 		return mongoTemplate.findOne(query, GameRoom.class);
+	}
+
+	@Override
+	public void updateGameRoomServerGameId(String id, String serverGameId) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where("id").is(id));
+		Update update = new Update();
+		update.set("serverGame.gameId", serverGameId);
+		mongoTemplate.updateFirst(query, update, GameRoom.class);
 	}
 
 }

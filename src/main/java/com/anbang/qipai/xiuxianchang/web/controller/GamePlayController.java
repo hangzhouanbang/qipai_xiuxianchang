@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -17,6 +18,8 @@ import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomHasExistAlreadyE
 import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomNotFoundException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.MemberHasJoinGameRoomException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.GameRoomCmdService;
+import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldAccountDbo;
+import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
 import com.anbang.qipai.xiuxianchang.msg.service.DianpaoGameRoomMsgService;
 import com.anbang.qipai.xiuxianchang.msg.service.FangpaoGameRoomMsgService;
 import com.anbang.qipai.xiuxianchang.msg.service.RuianGameRoomMsgService;
@@ -26,6 +29,7 @@ import com.anbang.qipai.xiuxianchang.plan.bean.Game;
 import com.anbang.qipai.xiuxianchang.plan.bean.GameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.GameServer;
 import com.anbang.qipai.xiuxianchang.plan.bean.IllegalGameLawsException;
+import com.anbang.qipai.xiuxianchang.plan.bean.MemberGameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.MemberLoginLimitRecord;
 import com.anbang.qipai.xiuxianchang.plan.bean.NoServerAvailableForGameException;
 import com.anbang.qipai.xiuxianchang.plan.service.GameService;
@@ -77,6 +81,9 @@ public class GamePlayController {
 	private WenzhouShuangkouGameRoomMsgService wenzhouShuangkouGameRoomMsgService;
 
 	@Autowired
+	private MemberGoldQueryService memberGoldQueryService;
+
+	@Autowired
 	private HttpClient httpClient;
 
 	private Gson gson = new Gson();
@@ -99,51 +106,104 @@ public class GamePlayController {
 			vo.setMsg("login limited");
 			return vo;
 		}
-		GameRoom gameRoom = gameService.findNotFullGameRoom(Game.ruianMajiang);
-		boolean joinSuccess = true;// 是否加入成功
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		Random r = new Random();
+		List<GameRoom> gameRoomList = gameService.findNotFullGameRoom(Game.ruianMajiang);
+		GameRoom gameRoom = null;
+		if (gameRoomList != null && !gameRoomList.isEmpty()) {
+			gameRoom = gameRoomList.get(r.nextInt(gameRoomList.size()));
+		}
+		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
-			// 游戏服务器rpc加入房间
-			GameServer gameServer = gameRoom.getServerGame().getServer();
+			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
-			req.param("playerId", memberId);
-			req.param("gameId", serverGameId);
-			Map resData = null;
-			try {
-				ContentResponse res = req.send();
-				String resJson = new String(res.getContent());
-				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
-				if (resVo.isSuccess()) {
-					resData = (Map) resVo.getData();
-				} else {
+			boolean backSuccess = false;// 是否返回成功
+			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
+					memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						backSuccess = true;
+					} else {
+						backSuccess = false;
+					}
+				} catch (Exception e) {
+					backSuccess = false;
+				}
+				if (backSuccess) {
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						joinSuccess = true;
+					} else {
+						joinSuccess = false;
+					}
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
-			} catch (Exception e) {
-				joinSuccess = false;
-			}
-			try {
-				gameRoomCmdService.joinGame(serverGameId, memberId);
-			} catch (GameRoomNotFoundException e) {
-				joinSuccess = false;
-			} catch (MemberHasJoinGameRoomException e) {
-				joinSuccess = false;
-			}
-			if (joinSuccess) {
-				gameService.joinGameRoom(gameRoom, memberId);
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (GameRoomNotFoundException e) {
+					joinSuccess = false;
+				} catch (MemberHasJoinGameRoomException e) {
+					joinSuccess = false;
+				}
+				if (joinSuccess) {
+					gameService.joinGameRoom(gameRoom, memberId);
 
-				Map data = new HashMap();
-				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
-				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
-				data.put("token", resData.get("token"));
-				data.put("gameId", serverGameId);
-				data.put("game", gameRoom.getGame());
-				vo.setData(data);
-				return vo;
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
 			}
 		}
 		if (!joinSuccess) {// 加入失败,创建房间
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
+			lawNames.add("wsf");
+			lawNames.add("stfd");
+			lawNames.add("yj");
+			lawNames.add("er");
+			lawNames.add("dpwf");
 			try {
 				gameRoom = gameService.buildRamjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -198,8 +258,9 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			ruianGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
-					(String) data.get("gameId"), (String) data.get("game"));
+			ruianGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
+					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
+					gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -226,51 +287,103 @@ public class GamePlayController {
 			vo.setMsg("login limited");
 			return vo;
 		}
-		GameRoom gameRoom = gameService.findNotFullGameRoom(Game.fangpaoMajiang);
-		boolean joinSuccess = true;// 是否加入成功
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		Random r = new Random();
+		List<GameRoom> gameRoomList = gameService.findNotFullGameRoom(Game.fangpaoMajiang);
+		GameRoom gameRoom = null;
+		if (gameRoomList != null && !gameRoomList.isEmpty()) {
+			gameRoom = gameRoomList.get(r.nextInt(gameRoomList.size()));
+		}
+		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
-			// 游戏服务器rpc加入房间
-			GameServer gameServer = gameRoom.getServerGame().getServer();
+			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
-			req.param("playerId", memberId);
-			req.param("gameId", serverGameId);
-			Map resData = null;
-			try {
-				ContentResponse res = req.send();
-				String resJson = new String(res.getContent());
-				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
-				if (resVo.isSuccess()) {
-					resData = (Map) resVo.getData();
-				} else {
+			boolean backSuccess = false;// 是否返回成功
+			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
+					memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						backSuccess = true;
+					} else {
+						backSuccess = false;
+					}
+				} catch (Exception e) {
+					backSuccess = false;
+				}
+				if (backSuccess) {
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						joinSuccess = true;
+					} else {
+						joinSuccess = false;
+					}
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
-			} catch (Exception e) {
-				joinSuccess = false;
-			}
-			try {
-				gameRoomCmdService.joinGame(serverGameId, memberId);
-			} catch (GameRoomNotFoundException e) {
-				joinSuccess = false;
-			} catch (MemberHasJoinGameRoomException e) {
-				joinSuccess = false;
-			}
-			if (joinSuccess) {
-				gameService.joinGameRoom(gameRoom, memberId);
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (GameRoomNotFoundException e) {
+					joinSuccess = false;
+				} catch (MemberHasJoinGameRoomException e) {
+					joinSuccess = false;
+				}
+				if (joinSuccess) {
+					gameService.joinGameRoom(gameRoom, memberId);
 
-				Map data = new HashMap();
-				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
-				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
-				data.put("token", resData.get("token"));
-				data.put("gameId", serverGameId);
-				data.put("game", gameRoom.getGame());
-				vo.setData(data);
-				return vo;
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
 			}
 		}
 		if (!joinSuccess) {// 加入失败,创建房间
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
+			lawNames.add("yj");
+			lawNames.add("er");
+			lawNames.add("zn");
+			lawNames.add("szn");
 			try {
 				gameRoom = gameService.buildFpmjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -327,8 +440,9 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			fangpaoGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
-					(String) data.get("gameId"), (String) data.get("game"));
+			fangpaoGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
+					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
+					gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -355,51 +469,102 @@ public class GamePlayController {
 			vo.setMsg("login limited");
 			return vo;
 		}
-		GameRoom gameRoom = gameService.findNotFullGameRoom(Game.wenzhouMajiang);
-		boolean joinSuccess = true;// 是否加入成功
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		Random r = new Random();
+		List<GameRoom> gameRoomList = gameService.findNotFullGameRoom(Game.wenzhouMajiang);
+		GameRoom gameRoom = null;
+		if (gameRoomList != null && !gameRoomList.isEmpty()) {
+			gameRoom = gameRoomList.get(r.nextInt(gameRoomList.size()));
+		}
+		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
-			// 游戏服务器rpc加入房间
-			GameServer gameServer = gameRoom.getServerGame().getServer();
+			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
-			req.param("playerId", memberId);
-			req.param("gameId", serverGameId);
-			Map resData = null;
-			try {
-				ContentResponse res = req.send();
-				String resJson = new String(res.getContent());
-				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
-				if (resVo.isSuccess()) {
-					resData = (Map) resVo.getData();
-				} else {
+			boolean backSuccess = false;// 是否返回成功
+			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
+					memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						backSuccess = true;
+					} else {
+						backSuccess = false;
+					}
+				} catch (Exception e) {
+					backSuccess = false;
+				}
+				if (backSuccess) {
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						joinSuccess = true;
+					} else {
+						joinSuccess = false;
+					}
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
-			} catch (Exception e) {
-				joinSuccess = false;
-			}
-			try {
-				gameRoomCmdService.joinGame(serverGameId, memberId);
-			} catch (GameRoomNotFoundException e) {
-				joinSuccess = false;
-			} catch (MemberHasJoinGameRoomException e) {
-				joinSuccess = false;
-			}
-			if (joinSuccess) {
-				gameService.joinGameRoom(gameRoom, memberId);
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (GameRoomNotFoundException e) {
+					joinSuccess = false;
+				} catch (MemberHasJoinGameRoomException e) {
+					joinSuccess = false;
+				}
+				if (joinSuccess) {
+					gameService.joinGameRoom(gameRoom, memberId);
 
-				Map data = new HashMap();
-				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
-				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
-				data.put("token", resData.get("token"));
-				data.put("gameId", serverGameId);
-				data.put("game", gameRoom.getGame());
-				vo.setData(data);
-				return vo;
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
 			}
 		}
 		if (!joinSuccess) {// 加入失败,创建房间
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
+			lawNames.add("yj");
+			lawNames.add("er");
+			lawNames.add("jj1");
 			try {
 				gameRoom = gameService.buildWzmjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -458,8 +623,9 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			wenzhouGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
-					(String) data.get("gameId"), (String) data.get("game"));
+			wenzhouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
+					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
+					gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -486,51 +652,103 @@ public class GamePlayController {
 			vo.setMsg("login limited");
 			return vo;
 		}
-		GameRoom gameRoom = gameService.findNotFullGameRoom(Game.dianpaoMajiang);
-		boolean joinSuccess = true;// 是否加入成功
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		Random r = new Random();
+		List<GameRoom> gameRoomList = gameService.findNotFullGameRoom(Game.dianpaoMajiang);
+		GameRoom gameRoom = null;
+		if (gameRoomList != null && !gameRoomList.isEmpty()) {
+			gameRoom = gameRoomList.get(r.nextInt(gameRoomList.size()));
+		}
+		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
-			// 游戏服务器rpc加入房间
-			GameServer gameServer = gameRoom.getServerGame().getServer();
+			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
-			req.param("playerId", memberId);
-			req.param("gameId", serverGameId);
-			Map resData = null;
-			try {
-				ContentResponse res = req.send();
-				String resJson = new String(res.getContent());
-				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
-				if (resVo.isSuccess()) {
-					resData = (Map) resVo.getData();
-				} else {
+			boolean backSuccess = false;// 是否返回成功
+			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
+					memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						backSuccess = true;
+					} else {
+						backSuccess = false;
+					}
+				} catch (Exception e) {
+					backSuccess = false;
+				}
+				if (backSuccess) {
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						joinSuccess = true;
+					} else {
+						joinSuccess = false;
+					}
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
-			} catch (Exception e) {
-				joinSuccess = false;
-			}
-			try {
-				gameRoomCmdService.joinGame(serverGameId, memberId);
-			} catch (GameRoomNotFoundException e) {
-				joinSuccess = false;
-			} catch (MemberHasJoinGameRoomException e) {
-				joinSuccess = false;
-			}
-			if (joinSuccess) {
-				gameService.joinGameRoom(gameRoom, memberId);
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (GameRoomNotFoundException e) {
+					joinSuccess = false;
+				} catch (MemberHasJoinGameRoomException e) {
+					joinSuccess = false;
+				}
+				if (joinSuccess) {
+					gameService.joinGameRoom(gameRoom, memberId);
 
-				Map data = new HashMap();
-				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
-				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
-				data.put("token", resData.get("token"));
-				data.put("gameId", serverGameId);
-				data.put("game", gameRoom.getGame());
-				vo.setData(data);
-				return vo;
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
 			}
 		}
 		if (!joinSuccess) {// 加入失败,创建房间
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
+			lawNames.add("yj");
+			lawNames.add("er");
+			lawNames.add("zn");
+			lawNames.add("szn");
 			try {
 				gameRoom = gameService.buildDpmjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -589,8 +807,9 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			dianpaoGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
-					(String) data.get("gameId"), (String) data.get("game"));
+			dianpaoGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
+					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
+					gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -617,51 +836,105 @@ public class GamePlayController {
 			vo.setMsg("login limited");
 			return vo;
 		}
-		GameRoom gameRoom = gameService.findNotFullGameRoom(Game.wenzhouShuangkou);
-		boolean joinSuccess = true;// 是否加入成功
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		Random r = new Random();
+		List<GameRoom> gameRoomList = gameService.findNotFullGameRoom(Game.wenzhouShuangkou);
+		GameRoom gameRoom = null;
+		if (gameRoomList != null && !gameRoomList.isEmpty()) {
+			gameRoom = gameRoomList.get(r.nextInt(gameRoomList.size()));
+		}
+		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
-			// 游戏服务器rpc加入房间
-			GameServer gameServer = gameRoom.getServerGame().getServer();
+			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
-			req.param("playerId", memberId);
-			req.param("gameId", serverGameId);
-			Map resData = null;
-			try {
-				ContentResponse res = req.send();
-				String resJson = new String(res.getContent());
-				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
-				if (resVo.isSuccess()) {
-					resData = (Map) resVo.getData();
-				} else {
+			boolean backSuccess = false;// 是否返回成功
+			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
+					memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						backSuccess = true;
+					} else {
+						backSuccess = false;
+					}
+				} catch (Exception e) {
+					backSuccess = false;
+				}
+				if (backSuccess) {
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						joinSuccess = true;
+					} else {
+						joinSuccess = false;
+					}
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
-			} catch (Exception e) {
-				joinSuccess = false;
-			}
-			try {
-				gameRoomCmdService.joinGame(serverGameId, memberId);
-			} catch (GameRoomNotFoundException e) {
-				joinSuccess = false;
-			} catch (MemberHasJoinGameRoomException e) {
-				joinSuccess = false;
-			}
-			if (joinSuccess) {
-				gameService.joinGameRoom(gameRoom, memberId);
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (GameRoomNotFoundException e) {
+					joinSuccess = false;
+				} catch (MemberHasJoinGameRoomException e) {
+					joinSuccess = false;
+				}
+				if (joinSuccess) {
+					gameService.joinGameRoom(gameRoom, memberId);
 
-				Map data = new HashMap();
-				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
-				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
-				data.put("token", resData.get("token"));
-				data.put("gameId", serverGameId);
-				data.put("game", gameRoom.getGame());
-				vo.setData(data);
-				return vo;
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
 			}
 		}
 		if (!joinSuccess) {// 加入失败,创建房间
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
+			lawNames.add("yj");
+			lawNames.add("er");
+			lawNames.add("qianbian");
+			lawNames.add("erliuhun");
+			lawNames.add("sanliu");
+			lawNames.add("fengding");
 			try {
 				gameRoom = gameService.buildWzskGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -720,8 +993,9 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			wenzhouShuangkouGameRoomMsgService.createGameRoom((String) data.get("httpUrl"), (String) data.get("wsUrl"),
-					(String) data.get("gameId"), (String) data.get("game"));
+			wenzhouShuangkouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
+					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
+					gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -733,7 +1007,7 @@ public class GamePlayController {
 	/**
 	 * 房间到时定时器，每2小时
 	 */
-	@Scheduled(cron = "0 0 0/2 * * ?")
+	@Scheduled(cron = "0 0 0/1 * * ?")
 	public void removeGameRoom() {
 		long deadlineTime = System.currentTimeMillis();
 		List<GameRoom> roomList = gameService.findExpireGameRoom(deadlineTime);
