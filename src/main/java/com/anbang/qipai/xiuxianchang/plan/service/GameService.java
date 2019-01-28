@@ -317,6 +317,10 @@ public class GameService {
 		memberGameRoomDao.remove(game, serverGameId, memberId);
 	}
 
+	public GameRoom findGameRoomByGame(Game game, String gameId) {
+		return gameRoomDao.findGameRoomByGame(game, gameId);
+	}
+
 	/**
 	 * 查询到期的游戏房间
 	 */

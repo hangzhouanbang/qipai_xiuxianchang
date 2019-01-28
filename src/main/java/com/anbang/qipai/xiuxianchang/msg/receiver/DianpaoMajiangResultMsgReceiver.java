@@ -14,6 +14,7 @@ import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
 import com.anbang.qipai.xiuxianchang.msg.channel.sink.DianpaoMajiangResultSink;
 import com.anbang.qipai.xiuxianchang.msg.msjobs.CommonMO;
 import com.anbang.qipai.xiuxianchang.plan.bean.Game;
+import com.anbang.qipai.xiuxianchang.plan.bean.GameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.GameHistoricalJuResult;
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.GameHistoricalPanResult;
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.GameJuPlayerResult;
@@ -22,6 +23,7 @@ import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.majiang.DianpaoM
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.majiang.DianpaoMajiangPanPlayerResult;
 import com.anbang.qipai.xiuxianchang.plan.service.GameHistoricalJuResultService;
 import com.anbang.qipai.xiuxianchang.plan.service.GameHistoricalPanResultService;
+import com.anbang.qipai.xiuxianchang.plan.service.GameService;
 import com.dml.accounting.AccountingRecord;
 import com.google.gson.Gson;
 
@@ -40,6 +42,9 @@ public class DianpaoMajiangResultMsgReceiver {
 	@Autowired
 	private MemberGoldQueryService memberGoldQueryService;
 
+	@Autowired
+	private GameService gameService;
+
 	private Gson gson = new Gson();
 
 	@StreamListener(DianpaoMajiangResultSink.DIANPAOMAJIANGRESULT)
@@ -53,36 +58,39 @@ public class DianpaoMajiangResultMsgReceiver {
 			Object dthId = map.get("datuhaoId");
 			if (gid != null && dyjId != null && dthId != null) {
 				String gameId = (String) gid;
-				GameHistoricalJuResult majiangHistoricalResult = new GameHistoricalJuResult();
-				majiangHistoricalResult.setGameId(gameId);
-				majiangHistoricalResult.setGame(Game.dianpaoMajiang);
-				majiangHistoricalResult.setDayingjiaId((String) dyjId);
-				majiangHistoricalResult.setDatuhaoId((String) dthId);
+				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				if (room != null) {
+					GameHistoricalJuResult majiangHistoricalResult = new GameHistoricalJuResult();
+					majiangHistoricalResult.setGameId(gameId);
+					majiangHistoricalResult.setGame(Game.dianpaoMajiang);
+					majiangHistoricalResult.setDayingjiaId((String) dyjId);
+					majiangHistoricalResult.setDatuhaoId((String) dthId);
 
-				Object playerList = map.get("playerResultList");
-				if (playerList != null) {
-					List<GameJuPlayerResult> juPlayerResultList = new ArrayList<>();
-					((List) playerList).forEach((juPlayerResult) -> juPlayerResultList
-							.add(new DianpaoMajiangJuPlayerResult((Map) juPlayerResult)));
-					majiangHistoricalResult.setPlayerResultList(juPlayerResultList);
+					Object playerList = map.get("playerResultList");
+					if (playerList != null) {
+						List<GameJuPlayerResult> juPlayerResultList = new ArrayList<>();
+						((List) playerList).forEach((juPlayerResult) -> juPlayerResultList
+								.add(new DianpaoMajiangJuPlayerResult((Map) juPlayerResult)));
+						majiangHistoricalResult.setPlayerResultList(juPlayerResultList);
 
-					majiangHistoricalResult.setPanshu(((Double) map.get("panshu")).intValue());
-					majiangHistoricalResult.setLastPanNo(((Double) map.get("lastPanNo")).intValue());
-					majiangHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
+						majiangHistoricalResult.setPanshu(((Double) map.get("panshu")).intValue());
+						majiangHistoricalResult.setLastPanNo(((Double) map.get("lastPanNo")).intValue());
+						majiangHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
 
-					majiangHistoricalResultService.addGameHistoricalResult(majiangHistoricalResult);
+						majiangHistoricalResultService.addGameHistoricalResult(majiangHistoricalResult);
 
-					juPlayerResultList.forEach((playerResult) -> {
-						DianpaoMajiangJuPlayerResult pr = (DianpaoMajiangJuPlayerResult) playerResult;
-						try {
-							AccountingRecord accountingRecord = memberGoldCmdService.giveGoldToMember(pr.getPlayerId(),
-									pr.getTotalScore(), "xiuxianchang ju result",
-									majiangHistoricalResult.getFinishTime());
-							memberGoldQueryService.withdraw(pr.getPlayerId(), accountingRecord);
-						} catch (MemberNotFoundException e) {
-							e.printStackTrace();
-						}
-					});
+						juPlayerResultList.forEach((playerResult) -> {
+							DianpaoMajiangJuPlayerResult pr = (DianpaoMajiangJuPlayerResult) playerResult;
+							try {
+								AccountingRecord accountingRecord = memberGoldCmdService.giveGoldToMember(
+										pr.getPlayerId(), pr.getTotalScore(), "xiuxianchang ju result",
+										majiangHistoricalResult.getFinishTime());
+								memberGoldQueryService.withdraw(pr.getPlayerId(), accountingRecord);
+							} catch (MemberNotFoundException e) {
+								e.printStackTrace();
+							}
+						});
+					}
 				}
 			}
 		}
@@ -90,21 +98,24 @@ public class DianpaoMajiangResultMsgReceiver {
 			Object gid = map.get("gameId");
 			if (gid != null) {
 				String gameId = (String) gid;
-				GameHistoricalPanResult majiangHistoricalResult = new GameHistoricalPanResult();
-				majiangHistoricalResult.setGameId(gameId);
-				majiangHistoricalResult.setGame(Game.dianpaoMajiang);
+				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				if (room != null) {
+					GameHistoricalPanResult majiangHistoricalResult = new GameHistoricalPanResult();
+					majiangHistoricalResult.setGameId(gameId);
+					majiangHistoricalResult.setGame(Game.dianpaoMajiang);
 
-				Object playerList = map.get("playerResultList");
-				if (playerList != null) {
-					List<GamePanPlayerResult> panPlayerResultList = new ArrayList<>();
-					((List) map.get("playerResultList")).forEach((panPlayerResult) -> panPlayerResultList
-							.add(new DianpaoMajiangPanPlayerResult((Map) panPlayerResult)));
-					majiangHistoricalResult.setPlayerResultList(panPlayerResultList);
+					Object playerList = map.get("playerResultList");
+					if (playerList != null) {
+						List<GamePanPlayerResult> panPlayerResultList = new ArrayList<>();
+						((List) map.get("playerResultList")).forEach((panPlayerResult) -> panPlayerResultList
+								.add(new DianpaoMajiangPanPlayerResult((Map) panPlayerResult)));
+						majiangHistoricalResult.setPlayerResultList(panPlayerResultList);
 
-					majiangHistoricalResult.setNo(((Double) map.get("no")).intValue());
-					majiangHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
+						majiangHistoricalResult.setNo(((Double) map.get("no")).intValue());
+						majiangHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
 
-					majiangHistoricalPanResultService.addGameHistoricalResult(majiangHistoricalResult);
+						majiangHistoricalPanResultService.addGameHistoricalResult(majiangHistoricalResult);
+					}
 				}
 			}
 		}

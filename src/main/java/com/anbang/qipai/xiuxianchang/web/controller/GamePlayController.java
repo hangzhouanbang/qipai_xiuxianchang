@@ -219,7 +219,7 @@ public class GamePlayController {
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			RamjLawsFB fb = new RamjLawsFB(lawNames);
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
 			req.param("playerId", memberId);
 			req.param("difen", fb.getDifen());
 			req.param("taishu", fb.getTaishu());
@@ -399,7 +399,7 @@ public class GamePlayController {
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			FpmjLawsFB fb = new FpmjLawsFB(lawNames);
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());
@@ -580,7 +580,7 @@ public class GamePlayController {
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			WzmjLawsFB fb = new WzmjLawsFB(lawNames);
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());
@@ -765,7 +765,7 @@ public class GamePlayController {
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			DpmjLawsFB fb = new DpmjLawsFB(lawNames);
 			// 远程调用游戏服务器的newgame
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());
@@ -951,7 +951,7 @@ public class GamePlayController {
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			WzskLawsFB fb = new WzskLawsFB(lawNames);
 			// 远程调用游戏服务器的newgame
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());

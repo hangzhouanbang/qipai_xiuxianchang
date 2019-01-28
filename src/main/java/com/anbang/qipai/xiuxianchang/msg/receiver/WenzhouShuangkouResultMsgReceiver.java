@@ -14,6 +14,7 @@ import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
 import com.anbang.qipai.xiuxianchang.msg.channel.sink.WenzhouShuangkouResultSink;
 import com.anbang.qipai.xiuxianchang.msg.msjobs.CommonMO;
 import com.anbang.qipai.xiuxianchang.plan.bean.Game;
+import com.anbang.qipai.xiuxianchang.plan.bean.GameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.GameHistoricalJuResult;
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.GameHistoricalPanResult;
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.GameJuPlayerResult;
@@ -22,6 +23,7 @@ import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.puke.WenzhouShua
 import com.anbang.qipai.xiuxianchang.plan.bean.historicalresult.puke.WenzhouShuangkouPanPlayerResult;
 import com.anbang.qipai.xiuxianchang.plan.service.GameHistoricalJuResultService;
 import com.anbang.qipai.xiuxianchang.plan.service.GameHistoricalPanResultService;
+import com.anbang.qipai.xiuxianchang.plan.service.GameService;
 import com.dml.accounting.AccountingRecord;
 import com.google.gson.Gson;
 
@@ -40,6 +42,9 @@ public class WenzhouShuangkouResultMsgReceiver {
 	@Autowired
 	private MemberGoldQueryService memberGoldQueryService;
 
+	@Autowired
+	private GameService gameService;
+
 	private Gson gson = new Gson();
 
 	@StreamListener(WenzhouShuangkouResultSink.WENZHOUSHUANGKOURESULT)
@@ -53,35 +58,39 @@ public class WenzhouShuangkouResultMsgReceiver {
 			Object dthId = map.get("datuhaoId");
 			if (gid != null && dyjId != null && dthId != null) {
 				String gameId = (String) gid;
-				GameHistoricalJuResult pukeHistoricalResult = new GameHistoricalJuResult();
-				pukeHistoricalResult.setGameId(gameId);
-				pukeHistoricalResult.setGame(Game.wenzhouShuangkou);
-				pukeHistoricalResult.setDayingjiaId((String) dyjId);
-				pukeHistoricalResult.setDatuhaoId((String) dthId);
+				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				if (room != null) {
+					GameHistoricalJuResult pukeHistoricalResult = new GameHistoricalJuResult();
+					pukeHistoricalResult.setGameId(gameId);
+					pukeHistoricalResult.setGame(Game.wenzhouShuangkou);
+					pukeHistoricalResult.setDayingjiaId((String) dyjId);
+					pukeHistoricalResult.setDatuhaoId((String) dthId);
 
-				Object playerList = map.get("playerResultList");
-				if (playerList != null) {
-					List<GameJuPlayerResult> juPlayerResultList = new ArrayList<>();
-					((List) playerList).forEach((juPlayerResult) -> juPlayerResultList
-							.add(new WenzhouShuangkouJuPlayerResult((Map) juPlayerResult)));
-					pukeHistoricalResult.setPlayerResultList(juPlayerResultList);
+					Object playerList = map.get("playerResultList");
+					if (playerList != null) {
+						List<GameJuPlayerResult> juPlayerResultList = new ArrayList<>();
+						((List) playerList).forEach((juPlayerResult) -> juPlayerResultList
+								.add(new WenzhouShuangkouJuPlayerResult((Map) juPlayerResult)));
+						pukeHistoricalResult.setPlayerResultList(juPlayerResultList);
 
-					pukeHistoricalResult.setPanshu(((Double) map.get("panshu")).intValue());
-					pukeHistoricalResult.setLastPanNo(((Double) map.get("lastPanNo")).intValue());
-					pukeHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
+						pukeHistoricalResult.setPanshu(((Double) map.get("panshu")).intValue());
+						pukeHistoricalResult.setLastPanNo(((Double) map.get("lastPanNo")).intValue());
+						pukeHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
 
-					gameHistoricalResultService.addGameHistoricalResult(pukeHistoricalResult);
+						gameHistoricalResultService.addGameHistoricalResult(pukeHistoricalResult);
 
-					juPlayerResultList.forEach((playerResult) -> {
-						WenzhouShuangkouJuPlayerResult pr = (WenzhouShuangkouJuPlayerResult) playerResult;
-						try {
-							AccountingRecord accountingRecord = memberGoldCmdService.giveGoldToMember(pr.getPlayerId(),
-									pr.getTotalScore(), "xiuxianchang ju result", pukeHistoricalResult.getFinishTime());
-							memberGoldQueryService.withdraw(pr.getPlayerId(), accountingRecord);
-						} catch (MemberNotFoundException e) {
-							e.printStackTrace();
-						}
-					});
+						juPlayerResultList.forEach((playerResult) -> {
+							WenzhouShuangkouJuPlayerResult pr = (WenzhouShuangkouJuPlayerResult) playerResult;
+							try {
+								AccountingRecord accountingRecord = memberGoldCmdService.giveGoldToMember(
+										pr.getPlayerId(), pr.getTotalScore(), "xiuxianchang ju result",
+										pukeHistoricalResult.getFinishTime());
+								memberGoldQueryService.withdraw(pr.getPlayerId(), accountingRecord);
+							} catch (MemberNotFoundException e) {
+								e.printStackTrace();
+							}
+						});
+					}
 				}
 			}
 		}
@@ -89,21 +98,24 @@ public class WenzhouShuangkouResultMsgReceiver {
 			Object gid = map.get("gameId");
 			if (gid != null) {
 				String gameId = (String) gid;
-				GameHistoricalPanResult pukeHistoricalResult = new GameHistoricalPanResult();
-				pukeHistoricalResult.setGameId(gameId);
-				pukeHistoricalResult.setGame(Game.wenzhouShuangkou);
+				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				if (room != null) {
+					GameHistoricalPanResult pukeHistoricalResult = new GameHistoricalPanResult();
+					pukeHistoricalResult.setGameId(gameId);
+					pukeHistoricalResult.setGame(Game.wenzhouShuangkou);
 
-				Object playerList = map.get("playerResultList");
-				if (playerList != null) {
-					List<GamePanPlayerResult> panPlayerResultList = new ArrayList<>();
-					((List) playerList).forEach((panPlayerResult) -> panPlayerResultList
-							.add(new WenzhouShuangkouPanPlayerResult((Map) panPlayerResult)));
-					pukeHistoricalResult.setPlayerResultList(panPlayerResultList);
+					Object playerList = map.get("playerResultList");
+					if (playerList != null) {
+						List<GamePanPlayerResult> panPlayerResultList = new ArrayList<>();
+						((List) playerList).forEach((panPlayerResult) -> panPlayerResultList
+								.add(new WenzhouShuangkouPanPlayerResult((Map) panPlayerResult)));
+						pukeHistoricalResult.setPlayerResultList(panPlayerResultList);
 
-					pukeHistoricalResult.setNo(((Double) map.get("no")).intValue());
-					pukeHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
+						pukeHistoricalResult.setNo(((Double) map.get("no")).intValue());
+						pukeHistoricalResult.setFinishTime(((Double) map.get("finishTime")).longValue());
 
-					gameHistoricalPanResultService.addGameHistoricalResult(pukeHistoricalResult);
+						gameHistoricalPanResultService.addGameHistoricalResult(pukeHistoricalResult);
+					}
 				}
 			}
 		}
