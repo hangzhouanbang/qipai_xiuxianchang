@@ -3,6 +3,7 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/qipai_xiuxianchang
 
+
   cloud:
     stream:
       kafka:
@@ -92,55 +93,55 @@ spring:
             partitionCount: 1
         gameServer:
           destination: gameServer
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
           contentType: application/json
         memberLoginLimitRecord:
           destination: memberLoginLimitRecord
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
           contentType: application/json
         members:
           destination: members
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
         ruianMajiangResult:
           destination: ruianMajiangResult
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
           contentType: application/json
         fangpaoMajiangResult:
           destination: fangpaoMajiangResult
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
           contentType: application/json
         wenzhouMajiangResult:
           destination: wenzhouMajiangResult
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
           contentType: application/json
         dianpaoMajiangResult:
           destination: dianpaoMajiangResult
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false
           contentType: application/json
         wenzhouShuangkouResult:
           destination: wenzhouShuangkouResult
-          group: qipai_xiuxianchang
+          group: qipai-xiuxianchang
           consumer:
             concurrency: 1
             partitioned: false

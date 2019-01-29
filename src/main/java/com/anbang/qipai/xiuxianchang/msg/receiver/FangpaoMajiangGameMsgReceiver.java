@@ -55,7 +55,7 @@ public class FangpaoMajiangGameMsgReceiver {
 			Map data = (Map) mo.getData();
 			String gameId = (String) data.get("gameId");
 			String playerId = (String) data.get("playerId");
-			long leaveTime = ((Double) data.get("leaveTime")).longValue();
+			long leaveTime = (Long) data.get("leaveTime");
 			List<MemberGameRoom> memberRooms = gameService.findMemberGameRoomByGame(Game.fangpaoMajiang, gameId);
 			memberRooms.forEach((memberRoom) -> {
 				if (playerId.equals(memberRoom.getMemberId())) {
