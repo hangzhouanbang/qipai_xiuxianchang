@@ -21,6 +21,9 @@ public class MemberGoldController {
 	@Autowired
 	private MemberGoldQueryService memberGoldQueryService;
 
+	/**
+	 * 减少玩家金币
+	 */
 	@RequestMapping(value = "/withdraw")
 	public CommonVO withdraw(String memberId, int amount, String textSummary) {
 		CommonVO vo = new CommonVO();
@@ -40,6 +43,9 @@ public class MemberGoldController {
 		}
 	}
 
+	/**
+	 * 赠送玩家金币
+	 */
 	@RequestMapping(value = "/givegoldtomember")
 	public CommonVO giveGoldToMember(String memberId, int amount, String textSummary) {
 		CommonVO vo = new CommonVO();

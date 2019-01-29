@@ -123,8 +123,8 @@ public class GamePlayController {
 			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
-			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
-					memberId);
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
 			if (memberGameRoom != null) {
 				// 游戏服务器rpc返回房间
 				GameServer gameServer = gameRoom.getServerGame().getServer();
@@ -219,7 +219,7 @@ public class GamePlayController {
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			RamjLawsFB fb = new RamjLawsFB(lawNames);
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_leave_quit");
 			req.param("playerId", memberId);
 			req.param("difen", fb.getDifen());
 			req.param("taishu", fb.getTaishu());
@@ -304,8 +304,8 @@ public class GamePlayController {
 			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
-			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
-					memberId);
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
 			if (memberGameRoom != null) {
 				// 游戏服务器rpc返回房间
 				GameServer gameServer = gameRoom.getServerGame().getServer();
@@ -399,7 +399,7 @@ public class GamePlayController {
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			FpmjLawsFB fb = new FpmjLawsFB(lawNames);
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_leave_quit");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());
@@ -486,8 +486,8 @@ public class GamePlayController {
 			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
-			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
-					memberId);
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
 			if (memberGameRoom != null) {
 				// 游戏服务器rpc返回房间
 				GameServer gameServer = gameRoom.getServerGame().getServer();
@@ -580,7 +580,7 @@ public class GamePlayController {
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			WzmjLawsFB fb = new WzmjLawsFB(lawNames);
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_leave_quit");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());
@@ -669,8 +669,8 @@ public class GamePlayController {
 			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
-			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
-					memberId);
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
 			if (memberGameRoom != null) {
 				// 游戏服务器rpc返回房间
 				GameServer gameServer = gameRoom.getServerGame().getServer();
@@ -765,7 +765,7 @@ public class GamePlayController {
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			DpmjLawsFB fb = new DpmjLawsFB(lawNames);
 			// 远程调用游戏服务器的newgame
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_leave_quit");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());
@@ -853,8 +853,8 @@ public class GamePlayController {
 			// 处理如果是自己暂时离开的房间
 			String serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
-			MemberGameRoom memberGameRoom = gameService.findByGameAndMemberId(gameRoom.getGame(), serverGameId,
-					memberId);
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
 			if (memberGameRoom != null) {
 				// 游戏服务器rpc返回房间
 				GameServer gameServer = gameRoom.getServerGame().getServer();
@@ -951,7 +951,7 @@ public class GamePlayController {
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			WzskLawsFB fb = new WzskLawsFB(lawNames);
 			// 远程调用游戏服务器的newgame
-			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_xiuxianchang");
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_leave_quit");
 			req.param("playerId", memberId);
 			req.param("panshu", fb.getPanshu());
 			req.param("renshu", fb.getRenshu());

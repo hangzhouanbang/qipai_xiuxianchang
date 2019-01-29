@@ -1,5 +1,7 @@
 package com.anbang.qipai.xiuxianchang.plan.dao.mongodb;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -45,6 +47,14 @@ public class MongodbMemberGameRoomDao implements MemberGameRoomDao {
 		query.addCriteria(Criteria.where("gameRoom.game").is(game));
 		query.addCriteria(Criteria.where("gameRoom.serverGame.gameId").is(gameId));
 		return mongoTemplate.findOne(query, MemberGameRoom.class);
+	}
+
+	@Override
+	public List<MemberGameRoom> findByGame(Game game, String gameId) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where("gameRoom.game").is(game));
+		query.addCriteria(Criteria.where("gameRoom.serverGame.gameId").is(gameId));
+		return mongoTemplate.find(query, MemberGameRoom.class);
 	}
 
 }

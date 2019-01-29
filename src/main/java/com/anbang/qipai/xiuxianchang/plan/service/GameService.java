@@ -335,8 +335,12 @@ public class GameService {
 		memberGameRoomDao.remove(game, serverGameId);
 	}
 
-	public MemberGameRoom findByGameAndMemberId(Game game, String gameId, String memberId) {
+	public MemberGameRoom findMemberGameRoomByGameAndMemberId(Game game, String gameId, String memberId) {
 		return memberGameRoomDao.findByGameAndMemberId(game, gameId, memberId);
+	}
+
+	public List<MemberGameRoom> findMemberGameRoomByGame(Game game, String gameId) {
+		return memberGameRoomDao.findByGame(game, gameId);
 	}
 
 	public GameLaw findGameLaw(Game game, String lawName) {
