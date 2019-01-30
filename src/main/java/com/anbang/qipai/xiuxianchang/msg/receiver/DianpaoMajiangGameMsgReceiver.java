@@ -15,6 +15,7 @@ import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
 import com.anbang.qipai.xiuxianchang.msg.channel.sink.DianpaoMajiangGameSink;
 import com.anbang.qipai.xiuxianchang.msg.msjobs.CommonMO;
 import com.anbang.qipai.xiuxianchang.plan.bean.Game;
+import com.anbang.qipai.xiuxianchang.plan.bean.GameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.MemberGameRoom;
 import com.anbang.qipai.xiuxianchang.plan.service.GameService;
 import com.dml.accounting.AccountingRecord;
@@ -44,11 +45,14 @@ public class DianpaoMajiangGameMsgReceiver {
 			Map data = (Map) mo.getData();
 			String gameId = (String) data.get("gameId");
 			String playerId = (String) data.get("playerId");
-			try {
-				gameRoomCmdService.leaveGameRoom(gameId, playerId);
-				gameService.leaveGameRoom(Game.dianpaoMajiang, gameId, playerId);
-			} catch (GameRoomNotFoundException e) {
-				e.printStackTrace();
+			GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+			if (room != null) {
+				try {
+					gameRoomCmdService.leaveGameRoom(gameId, playerId);
+					gameService.leaveGameRoom(Game.dianpaoMajiang, gameId, playerId);
+				} catch (GameRoomNotFoundException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		if ("ju canceled".equals(msg)) {// 取消游戏
