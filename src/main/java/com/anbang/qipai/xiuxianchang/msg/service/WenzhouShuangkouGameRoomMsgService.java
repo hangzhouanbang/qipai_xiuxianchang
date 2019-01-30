@@ -23,13 +23,11 @@ public class WenzhouShuangkouGameRoomMsgService {
 		wenzhouShuangkouGameRoomSource.wenzhouShuangkouGameRoom().send(MessageBuilder.withPayload(mo).build());
 	}
 
-	public void createGameRoom(String httpUrl, String wsUrl, String gameId, String game) {
+	public void createGameRoom(String gameId, String game) {
 		CommonMO mo = new CommonMO();
 		mo.setMsg("create gameroom");
 		Map data = new HashMap<>();
 		mo.setData(data);
-		data.put("httpUrl", httpUrl);
-		data.put("wsUrl", wsUrl);
 		data.put("gameId", gameId);
 		data.put("game", game);
 		wenzhouShuangkouGameRoomSource.wenzhouShuangkouGameRoom().send(MessageBuilder.withPayload(mo).build());

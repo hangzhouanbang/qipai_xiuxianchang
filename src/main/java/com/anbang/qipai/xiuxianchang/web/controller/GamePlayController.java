@@ -258,9 +258,7 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			ruianGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
-					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
-					gameRoom.getGame().name());
+			ruianGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -440,9 +438,7 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			fangpaoGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
-					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
-					gameRoom.getGame().name());
+			fangpaoGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -623,9 +619,7 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			wenzhouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
-					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
-					gameRoom.getGame().name());
+			wenzhouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -807,9 +801,7 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			dianpaoGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
-					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
-					gameRoom.getGame().name());
+			dianpaoGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
@@ -993,14 +985,125 @@ public class GamePlayController {
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
 			vo.setData(data);
-			wenzhouShuangkouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getServer().getHttpUrl(),
-					gameRoom.getServerGame().getServer().getWsUrl(), gameRoom.getServerGame().getGameId(),
+			wenzhouShuangkouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(),
 					gameRoom.getGame().name());
 			return vo;
 		}
 		// 全部失败
 		vo.setSuccess(false);
 		vo.setMsg("NoServerAvailableForGameException");
+		return vo;
+	}
+
+	/**
+	 * 加入游戏
+	 */
+	@RequestMapping(value = "/join_game")
+	public CommonVO joinGame(String token, String gameId, Game game) {
+		CommonVO vo = new CommonVO();
+		String memberId = memberAuthService.getMemberIdBySessionId(token);
+		if (memberId == null) {
+			vo.setSuccess(false);
+			vo.setMsg("invalid token");
+			return vo;
+		}
+		MemberLoginLimitRecord loginLimitRecord = memberLoginLimitRecordService.findByMemberId(memberId, true);
+		if (loginLimitRecord != null) {
+			vo.setSuccess(false);
+			vo.setMsg("login limited");
+			return vo;
+		}
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		GameRoom gameRoom = gameService.findGameRoomByGame(game, gameId);
+		if (gameRoom != null && !gameRoom.isFull()) {
+			// 处理如果是自己暂时离开的房间
+			String serverGameId = gameRoom.getServerGame().getGameId();
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+					} else {
+						vo.setSuccess(false);
+						vo.setMsg(resVo.getMsg());
+						return vo;
+					}
+				} catch (Exception e) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
+				Map data = new HashMap();
+				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+				data.put("token", resData.get("token"));
+				data.put("gameId", serverGameId);
+				data.put("game", gameRoom.getGame());
+				vo.setData(data);
+				return vo;
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+					} else {
+						vo.setSuccess(false);
+						vo.setMsg(resVo.getMsg());
+						return vo;
+					}
+				} catch (Exception e) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (GameRoomNotFoundException e) {
+					vo.setSuccess(false);
+					vo.setMsg("GameRoomNotFoundException");
+					return vo;
+				} catch (MemberHasJoinGameRoomException e) {
+					vo.setSuccess(false);
+					vo.setMsg("MemberHasJoinGameRoomException");
+					return vo;
+				}
+				gameService.joinGameRoom(gameRoom, memberId);
+
+				Map data = new HashMap();
+				data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+				data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+				data.put("token", resData.get("token"));
+				data.put("gameId", serverGameId);
+				data.put("game", gameRoom.getGame());
+				vo.setData(data);
+				return vo;
+			}
+		}
+		vo.setSuccess(false);
+		vo.setMsg("GameRoomNotFoundException");
 		return vo;
 	}
 
