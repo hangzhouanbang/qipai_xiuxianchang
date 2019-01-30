@@ -202,7 +202,7 @@ public class GamePlayController {
 			lawNames.add("wsf");
 			lawNames.add("bxts");
 			lawNames.add("yj");
-			lawNames.add("er");
+			lawNames.add("sir");
 			lawNames.add("dpwf");
 			try {
 				gameRoom = gameService.buildRamjGameRoom(memberId, lawNames);
@@ -379,7 +379,7 @@ public class GamePlayController {
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
-			lawNames.add("er");
+			lawNames.add("sir");
 			lawNames.add("hzdcs");
 			lawNames.add("dp");
 			lawNames.add("spfb");
@@ -560,7 +560,7 @@ public class GamePlayController {
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
-			lawNames.add("er");
+			lawNames.add("sir");
 			lawNames.add("jj1");
 			lawNames.add("tssf");
 			lawNames.add("csq");
@@ -745,7 +745,7 @@ public class GamePlayController {
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
-			lawNames.add("er");
+			lawNames.add("sir");
 			lawNames.add("dianpao");
 			lawNames.add("dp");
 			lawNames.add("qzfb");
@@ -929,7 +929,7 @@ public class GamePlayController {
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
-			lawNames.add("er");
+			lawNames.add("sir");
 			lawNames.add("qianbian");
 			lawNames.add("erliuhun");
 			lawNames.add("sanliu");

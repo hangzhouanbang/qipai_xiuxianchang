@@ -42,6 +42,9 @@ public class MemberGoldAccountManager {
 			throw new MemberNotFoundException();
 		}
 		Account account = idAccountMap.get(memberIdAccountIdMap.get(memberId));
+		if (account.getBalance() > 100000 && giveGoldAmount > 0) {// 超过上限不再增加,临时
+			throw new MemberNotFoundException();
+		}
 		AccountingRecord record = account.deposit(giveGoldAmount, accountingSummary, giveTime);
 		return record;
 	}
