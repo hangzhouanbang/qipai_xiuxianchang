@@ -200,7 +200,7 @@ public class GamePlayController {
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("wsf");
-			lawNames.add("stfd");
+			lawNames.add("bxts");
 			lawNames.add("yj");
 			lawNames.add("er");
 			lawNames.add("dpwf");
@@ -380,8 +380,9 @@ public class GamePlayController {
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
 			lawNames.add("er");
-			lawNames.add("zn");
-			lawNames.add("szn");
+			lawNames.add("hzdcs");
+			lawNames.add("dp");
+			lawNames.add("spfb");
 			try {
 				gameRoom = gameService.buildFpmjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -561,6 +562,10 @@ public class GamePlayController {
 			lawNames.add("yj");
 			lawNames.add("er");
 			lawNames.add("jj1");
+			lawNames.add("tssf");
+			lawNames.add("csq");
+			lawNames.add("szf");
+			lawNames.add("gsf");
 			try {
 				gameRoom = gameService.buildWzmjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -741,8 +746,10 @@ public class GamePlayController {
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
 			lawNames.add("er");
-			lawNames.add("zn");
-			lawNames.add("szn");
+			lawNames.add("dianpao");
+			lawNames.add("dp");
+			lawNames.add("qzfb");
+			lawNames.add("qingyise");
 			try {
 				gameRoom = gameService.buildDpmjGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
@@ -926,7 +933,6 @@ public class GamePlayController {
 			lawNames.add("qianbian");
 			lawNames.add("erliuhun");
 			lawNames.add("sanliu");
-			lawNames.add("fengding");
 			try {
 				gameRoom = gameService.buildWzskGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {

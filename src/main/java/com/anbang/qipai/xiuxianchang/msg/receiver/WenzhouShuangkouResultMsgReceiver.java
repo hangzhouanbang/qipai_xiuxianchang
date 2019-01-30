@@ -58,7 +58,7 @@ public class WenzhouShuangkouResultMsgReceiver {
 			Object dthId = map.get("datuhaoId");
 			if (gid != null && dyjId != null && dthId != null) {
 				String gameId = (String) gid;
-				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				GameRoom room = gameService.findGameRoomByGame(Game.wenzhouShuangkou, gameId);
 				if (room != null) {
 					GameHistoricalJuResult pukeHistoricalResult = new GameHistoricalJuResult();
 					pukeHistoricalResult.setGameId(gameId);
@@ -98,7 +98,7 @@ public class WenzhouShuangkouResultMsgReceiver {
 			Object gid = map.get("gameId");
 			if (gid != null) {
 				String gameId = (String) gid;
-				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				GameRoom room = gameService.findGameRoomByGame(Game.wenzhouShuangkou, gameId);
 				if (room != null) {
 					GameHistoricalPanResult pukeHistoricalResult = new GameHistoricalPanResult();
 					pukeHistoricalResult.setGameId(gameId);

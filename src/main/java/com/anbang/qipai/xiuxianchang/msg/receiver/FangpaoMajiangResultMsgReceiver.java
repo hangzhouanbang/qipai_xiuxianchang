@@ -58,7 +58,7 @@ public class FangpaoMajiangResultMsgReceiver {
 			Object dthId = map.get("datuhaoId");
 			if (gid != null && dyjId != null && dthId != null) {
 				String gameId = (String) gid;
-				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				GameRoom room = gameService.findGameRoomByGame(Game.fangpaoMajiang, gameId);
 				if (room != null) {
 					GameHistoricalJuResult majiangHistoricalResult = new GameHistoricalJuResult();
 					majiangHistoricalResult.setGameId(gameId);
@@ -99,7 +99,7 @@ public class FangpaoMajiangResultMsgReceiver {
 			Object gid = map.get("gameId");
 			if (gid != null) {
 				String gameId = (String) gid;
-				GameRoom room = gameService.findGameRoomByGame(Game.dianpaoMajiang, gameId);
+				GameRoom room = gameService.findGameRoomByGame(Game.fangpaoMajiang, gameId);
 				if (room != null) {
 					GameHistoricalPanResult majiangHistoricalResult = new GameHistoricalPanResult();
 					majiangHistoricalResult.setGameId(gameId);
