@@ -58,6 +58,7 @@ public class MongodbGameRoomDao implements GameRoomDao {
 		Query query = new Query();
 		query.addCriteria(Criteria.where("game").is(game));
 		query.addCriteria(Criteria.where("full").is(false));
+		query.addCriteria(Criteria.where("finished").is(false));
 		return mongoTemplate.find(query, GameRoom.class);
 	}
 
