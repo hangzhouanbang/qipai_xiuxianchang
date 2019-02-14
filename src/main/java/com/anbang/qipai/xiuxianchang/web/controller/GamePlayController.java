@@ -1114,7 +1114,7 @@ public class GamePlayController {
 	}
 
 	/**
-	 * 房间到时定时器，每2小时
+	 * 房间到时定时器，每1小时
 	 */
 	@Scheduled(cron = "0 0 0/1 * * ?")
 	public void removeGameRoom() {
