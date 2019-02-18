@@ -931,8 +931,8 @@ public class GamePlayController {
 			lawNames.add("yj");
 			lawNames.add("sir");
 			lawNames.add("qianbian");
-			lawNames.add("erliuhun");
-			lawNames.add("sanliu");
+			lawNames.add("ba");
+			lawNames.add("jiu");
 			try {
 				gameRoom = gameService.buildWzskGameRoom(memberId, lawNames);
 			} catch (NoServerAvailableForGameException e) {
