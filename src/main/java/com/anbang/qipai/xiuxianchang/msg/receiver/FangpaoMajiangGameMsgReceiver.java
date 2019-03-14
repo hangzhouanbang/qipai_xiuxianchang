@@ -64,7 +64,7 @@ public class FangpaoMajiangGameMsgReceiver {
 			memberRooms.forEach((memberRoom) -> {
 				if (playerId.equals(memberRoom.getMemberId())) {
 					try {
-						AccountingRecord accountingRecord = memberGoldCmdService.withdraw(memberRoom.getMemberId(), 300,
+						AccountingRecord accountingRecord = memberGoldCmdService.withdraw(memberRoom.getMemberId(), 60,
 								"xiuxianchang game cancle", leaveTime);
 						memberGoldQueryService.withdraw(memberRoom.getMemberId(), accountingRecord);
 					} catch (MemberNotFoundException e) {
@@ -75,7 +75,7 @@ public class FangpaoMajiangGameMsgReceiver {
 				} else {
 					try {
 						AccountingRecord accountingRecord = memberGoldCmdService
-								.giveGoldToMember(memberRoom.getMemberId(), 100, "xiuxianchang game cancle", leaveTime);
+								.giveGoldToMember(memberRoom.getMemberId(), 20, "xiuxianchang game cancle", leaveTime);
 						memberGoldQueryService.withdraw(memberRoom.getMemberId(), accountingRecord);
 					} catch (MemberNotFoundException e) {
 						e.printStackTrace();
