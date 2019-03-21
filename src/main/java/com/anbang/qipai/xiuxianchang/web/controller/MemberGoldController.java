@@ -1,6 +1,7 @@
 package com.anbang.qipai.xiuxianchang.web.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -59,5 +60,43 @@ public class MemberGoldController {
 			vo.setMsg("MemberNotFoundException");
 			return vo;
 		}
+	}
+
+	/**
+	 * 批量减少玩家金币
+	 */
+	@RequestMapping(value = "/members_withdraw")
+	public CommonVO members_withdraw(@RequestBody String[] memberIds, int amount, String textSummary) {
+		CommonVO vo = new CommonVO();
+		try {
+			for (String memberId : memberIds) {
+				AccountingRecord rcd = memberGoldCmdService.withdraw(memberId, amount, textSummary,
+						System.currentTimeMillis());
+				memberGoldQueryService.withdraw(memberId, rcd);
+			}
+		} catch (Exception e) {
+			vo.setSuccess(false);
+			vo.setMsg(e.getClass().getName());
+		}
+		return vo;
+	}
+
+	/**
+	 * 批量赠送玩家金币
+	 */
+	@RequestMapping(value = "/members_givegold")
+	public CommonVO members_giveGold(@RequestBody String[] memberIds, int amount, String textSummary) {
+		CommonVO vo = new CommonVO();
+		try {
+			for (String memberId : memberIds) {
+				AccountingRecord rcd = memberGoldCmdService.giveGoldToMember(memberId, amount, textSummary,
+						System.currentTimeMillis());
+				memberGoldQueryService.withdraw(memberId, rcd);
+			}
+		} catch (Exception e) {
+			vo.setSuccess(false);
+			vo.setMsg(e.getClass().getName());
+		}
+		return vo;
 	}
 }
