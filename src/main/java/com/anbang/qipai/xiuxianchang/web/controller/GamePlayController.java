@@ -958,7 +958,7 @@ public class GamePlayController {
 			req.param("fapai", fb.getFapai());
 			req.param("chaodi", fb.getChaodi());
 			req.param("shuangming", fb.getShuangming());
-			req.param("fengding", fb.getFengding());
+			req.param("bxfd", fb.getBxfd());
 			Map resData;
 			try {
 				ContentResponse res = req.send();
