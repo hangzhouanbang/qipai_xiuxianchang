@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.messaging.support.MessageBuilder;
 
 import com.anbang.qipai.xiuxianchang.msg.channel.source.DoudizhuGameRoomSource;
 import com.anbang.qipai.xiuxianchang.msg.msjobs.CommonMO;
 
+@EnableBinding(DoudizhuGameRoomSource.class)
 public class DoudizhuGameRoomMsgService {
 	@Autowired
 	private DoudizhuGameRoomSource doudizhuGameRoomSource;

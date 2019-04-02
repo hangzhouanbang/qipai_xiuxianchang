@@ -1118,7 +1118,7 @@ public class GamePlayController {
 			// 创建玩法
 			List<String> lawNames = new ArrayList<>();
 			lawNames.add("yj");
-			lawNames.add("sir");
+			lawNames.add("sanr");
 			lawNames.add("qxp");
 			lawNames.add("yf");
 			try {
