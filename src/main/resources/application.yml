@@ -1,7 +1,6 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://localhost:27017/qipai_xiuxianchang
 
 
   cloud:
@@ -64,6 +63,16 @@ spring:
                   ms: 5
                 batch:
                   size: 16384
+          doudizhuGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
                   
       bindings:
         ruianGameRoom:
@@ -88,6 +97,11 @@ spring:
             partitionCount: 1
         wenzhouShuangkouGameRoom:
           destination: wenzhouShuangkouGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        doudizhuGameRoom:
+          destination: doudizhuGameRoom
           contentType: application/json
           producer:
             partitionCount: 1
@@ -176,6 +190,20 @@ spring:
           contentType: application/json
         wenzhouShuangkouResult:
           destination: wenzhouShuangkouResult
+          group: qipai-xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        doudizhuGame:
+          destination: doudizhuGame
+          group: qipai-xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        doudizhuResult:
+          destination: doudizhuResult
           group: qipai-xiuxianchang
           consumer:
             concurrency: 1
