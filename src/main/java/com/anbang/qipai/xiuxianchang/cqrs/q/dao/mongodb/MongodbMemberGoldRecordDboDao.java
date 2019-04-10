@@ -42,4 +42,13 @@ public class MongodbMemberGoldRecordDboDao implements MemberGoldRecordDboDao {
 		return mongoTemplate.find(query, MemberGoldRecordDbo.class);
 	}
 
+	@Override
+	public long countByMemberIdAndSummaryAndTime(String memberId, String summary, long startTime, long endTime) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where("memberId").is(memberId));
+		query.addCriteria(Criteria.where("summary.text").is(summary));
+		query.addCriteria(Criteria.where("accountingTime").gt(endTime).lt(startTime));
+		return mongoTemplate.count(query, MemberGoldRecordDbo.class);
+	}
+
 }

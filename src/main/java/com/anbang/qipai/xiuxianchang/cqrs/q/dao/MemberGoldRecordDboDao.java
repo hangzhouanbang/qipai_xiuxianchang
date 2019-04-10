@@ -10,5 +10,7 @@ public interface MemberGoldRecordDboDao {
 
 	long getCountByMemberId(String memberId);
 
+	long countByMemberIdAndSummaryAndTime(String memberId, String summary, long startTime, long endTime);
+
 	List<MemberGoldRecordDbo> findMemberGoldRecordByMemberId(String memberId, int page, int size);
 }

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.anbang.qipai.xiuxianchang.cqrs.c.domain.member.MemberNotFoundException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.MemberGoldCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
+import com.anbang.qipai.xiuxianchang.plan.service.MemberAuthService;
 import com.anbang.qipai.xiuxianchang.web.vo.CommonVO;
 import com.dml.accounting.AccountingRecord;
 import com.dml.accounting.InsufficientBalanceException;
@@ -17,10 +18,42 @@ import com.dml.accounting.InsufficientBalanceException;
 public class MemberGoldController {
 
 	@Autowired
+	private MemberAuthService memberAuthService;
+
+	@Autowired
 	private MemberGoldCmdService memberGoldCmdService;
 
 	@Autowired
 	private MemberGoldQueryService memberGoldQueryService;
+
+	/**
+	 * 玩家申请金币补偿
+	 */
+	@RequestMapping(value = "/compensation")
+	public CommonVO compensation(String token) {
+		CommonVO vo = new CommonVO();
+		String memberId = memberAuthService.getMemberIdBySessionId(token);
+		if (memberId == null) {
+			vo.setSuccess(false);
+			vo.setMsg("invalid token");
+			return vo;
+		}
+		if (memberGoldQueryService.countCompensationByMemberId(memberId) >= 3) {
+			vo.setSuccess(false);
+			vo.setMsg("has no compensation");
+			return vo;
+		}
+		try {
+			AccountingRecord rcd = memberGoldCmdService.giveGoldToMember(memberId, 1500, "compensation for everyday",
+					System.currentTimeMillis());
+			memberGoldQueryService.withdraw(memberId, rcd);
+			return vo;
+		} catch (MemberNotFoundException e) {
+			vo.setSuccess(false);
+			vo.setMsg("MemberNotFoundException");
+			return vo;
+		}
+	}
 
 	/**
 	 * 减少玩家金币

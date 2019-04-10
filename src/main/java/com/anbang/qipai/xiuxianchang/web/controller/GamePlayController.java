@@ -157,6 +157,7 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
+					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -196,6 +197,7 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
+					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -262,6 +264,7 @@ public class GamePlayController {
 			data.put("gameId", gameRoom.getServerGame().getGameId());
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
+			System.out.println(data);
 			vo.setData(data);
 			ruianGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
@@ -1070,6 +1073,7 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
+					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -1109,6 +1113,7 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
+					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -1174,6 +1179,7 @@ public class GamePlayController {
 			data.put("gameId", gameRoom.getServerGame().getGameId());
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
+			System.out.println(data);
 			vo.setData(data);
 			doudizhuGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;

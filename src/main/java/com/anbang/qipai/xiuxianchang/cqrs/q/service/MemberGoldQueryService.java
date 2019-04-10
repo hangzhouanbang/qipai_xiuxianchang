@@ -1,5 +1,6 @@
 package com.anbang.qipai.xiuxianchang.cqrs.q.service;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import com.anbang.qipai.xiuxianchang.cqrs.q.dao.MemberGoldAccountDboDao;
 import com.anbang.qipai.xiuxianchang.cqrs.q.dao.MemberGoldRecordDboDao;
 import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldAccountDbo;
 import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldRecordDbo;
+import com.anbang.qipai.xiuxianchang.util.TimeUtil;
 import com.anbang.qipai.xiuxianchang.web.vo.RecordSummaryTexts;
 import com.dml.accounting.AccountingRecord;
 import com.dml.accounting.TextAccountingSummary;
@@ -52,6 +54,17 @@ public class MemberGoldQueryService {
 	 */
 	public MemberGoldAccountDbo findMemberGoldAccount(String memberId) {
 		return memberGoldAccountDboDao.findByMemberId(memberId);
+	}
+
+	/**
+	 * 统计今日补偿次数
+	 */
+	public long countCompensationByMemberId(String memberId) {
+		Date d = new Date();
+		long startTime = TimeUtil.getDayStartTime(d);
+		long endTime = TimeUtil.getDayEndTime(d);
+		return memberGoldRecordDboDao.countByMemberIdAndSummaryAndTime(memberId, "compensation for everyday", startTime,
+				endTime);
 	}
 
 	/**
