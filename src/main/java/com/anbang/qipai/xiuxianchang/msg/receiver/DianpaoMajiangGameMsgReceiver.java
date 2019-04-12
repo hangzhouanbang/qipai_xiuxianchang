@@ -7,8 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomNotFoundException;
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.member.MemberNotFoundException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.GameRoomCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.MemberGoldCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
@@ -19,7 +17,6 @@ import com.anbang.qipai.xiuxianchang.plan.bean.GameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.MemberGameRoom;
 import com.anbang.qipai.xiuxianchang.plan.service.GameService;
 import com.dml.accounting.AccountingRecord;
-import com.dml.accounting.InsufficientBalanceException;
 import com.google.gson.Gson;
 
 @EnableBinding(DianpaoMajiangGameSink.class)
@@ -50,7 +47,7 @@ public class DianpaoMajiangGameMsgReceiver {
 				try {
 					gameRoomCmdService.leaveGameRoom(gameId, playerId);
 					gameService.leaveGameRoom(Game.dianpaoMajiang, gameId, playerId);
-				} catch (GameRoomNotFoundException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -67,9 +64,7 @@ public class DianpaoMajiangGameMsgReceiver {
 						AccountingRecord accountingRecord = memberGoldCmdService.withdraw(memberRoom.getMemberId(), 60,
 								"xiuxianchang game cancle", leaveTime);
 						memberGoldQueryService.withdraw(memberRoom.getMemberId(), accountingRecord);
-					} catch (MemberNotFoundException e) {
-						e.printStackTrace();
-					} catch (InsufficientBalanceException e) {
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				} else {
@@ -77,7 +72,7 @@ public class DianpaoMajiangGameMsgReceiver {
 						AccountingRecord accountingRecord = memberGoldCmdService
 								.giveGoldToMember(memberRoom.getMemberId(), 20, "xiuxianchang game cancle", leaveTime);
 						memberGoldQueryService.withdraw(memberRoom.getMemberId(), accountingRecord);
-					} catch (MemberNotFoundException e) {
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}

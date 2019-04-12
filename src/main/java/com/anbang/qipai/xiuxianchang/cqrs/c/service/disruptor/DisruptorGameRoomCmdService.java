@@ -3,9 +3,6 @@ package com.anbang.qipai.xiuxianchang.cqrs.c.service.disruptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomHasExistAlreadyException;
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomNotFoundException;
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.MemberHasJoinGameRoomException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.GameRoomCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.impl.GameRoomCmdServiceImpl;
 import com.anbang.qipai.xiuxianchang.plan.bean.Game;
@@ -20,7 +17,7 @@ public class DisruptorGameRoomCmdService extends DisruptorCmdServiceBase impleme
 
 	@Override
 	public String createGame(String gameId, String memberId, Game game, Integer renshu, Long createTime)
-			throws GameRoomHasExistAlreadyException {
+			throws Exception {
 		CommonCommand cmd = new CommonCommand(GameRoomCmdServiceImpl.class.getName(), "createGame", gameId, memberId,
 				game, renshu, createTime);
 
@@ -32,17 +29,12 @@ public class DisruptorGameRoomCmdService extends DisruptorCmdServiceBase impleme
 		try {
 			return result.getResult();
 		} catch (Exception e) {
-			if (e instanceof GameRoomHasExistAlreadyException) {
-				throw (GameRoomHasExistAlreadyException) e;
-			} else {
-				throw new RuntimeException(e);
-			}
+			throw e;
 		}
 	}
 
 	@Override
-	public String joinGame(String gameId, String memberId)
-			throws GameRoomNotFoundException, MemberHasJoinGameRoomException {
+	public String joinGame(String gameId, String memberId) throws Exception {
 		CommonCommand cmd = new CommonCommand(GameRoomCmdServiceImpl.class.getName(), "joinGame", gameId, memberId);
 
 		DeferredResult<String> result = publishEvent(disruptorFactory.getCoreCmdDisruptor(), cmd, () -> {
@@ -52,18 +44,12 @@ public class DisruptorGameRoomCmdService extends DisruptorCmdServiceBase impleme
 		try {
 			return result.getResult();
 		} catch (Exception e) {
-			if (e instanceof GameRoomNotFoundException) {
-				throw (GameRoomNotFoundException) e;
-			} else if (e instanceof MemberHasJoinGameRoomException) {
-				throw (MemberHasJoinGameRoomException) e;
-			} else {
-				throw new RuntimeException(e);
-			}
+			throw e;
 		}
 	}
 
 	@Override
-	public String leaveGameRoom(String gameId, String memberId) throws GameRoomNotFoundException {
+	public String leaveGameRoom(String gameId, String memberId) throws Exception {
 		CommonCommand cmd = new CommonCommand(GameRoomCmdServiceImpl.class.getName(), "leaveGameRoom", gameId,
 				memberId);
 		DeferredResult<String> result = publishEvent(disruptorFactory.getCoreCmdDisruptor(), cmd, () -> {
@@ -73,16 +59,12 @@ public class DisruptorGameRoomCmdService extends DisruptorCmdServiceBase impleme
 		try {
 			return result.getResult();
 		} catch (Exception e) {
-			if (e instanceof GameRoomNotFoundException) {
-				throw (GameRoomNotFoundException) e;
-			} else {
-				throw new RuntimeException(e);
-			}
+			throw e;
 		}
 	}
 
 	@Override
-	public String removeGameRoom(String gameId) {
+	public String removeGameRoom(String gameId) throws Exception {
 		CommonCommand cmd = new CommonCommand(GameRoomCmdServiceImpl.class.getName(), "removeGameRoom", gameId);
 		DeferredResult<String> result = publishEvent(disruptorFactory.getCoreCmdDisruptor(), cmd, () -> {
 			String id = gameRoomCmdServiceImpl.removeGameRoom(cmd.getParameter());
@@ -91,7 +73,7 @@ public class DisruptorGameRoomCmdService extends DisruptorCmdServiceBase impleme
 		try {
 			return result.getResult();
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw e;
 		}
 	}
 

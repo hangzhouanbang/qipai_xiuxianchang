@@ -14,9 +14,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomHasExistAlreadyException;
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.GameRoomNotFoundException;
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.game.MemberHasJoinGameRoomException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.GameRoomCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldAccountDbo;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
@@ -29,10 +26,8 @@ import com.anbang.qipai.xiuxianchang.msg.service.WenzhouShuangkouGameRoomMsgServ
 import com.anbang.qipai.xiuxianchang.plan.bean.Game;
 import com.anbang.qipai.xiuxianchang.plan.bean.GameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.GameServer;
-import com.anbang.qipai.xiuxianchang.plan.bean.IllegalGameLawsException;
 import com.anbang.qipai.xiuxianchang.plan.bean.MemberGameRoom;
 import com.anbang.qipai.xiuxianchang.plan.bean.MemberLoginLimitRecord;
-import com.anbang.qipai.xiuxianchang.plan.bean.NoServerAvailableForGameException;
 import com.anbang.qipai.xiuxianchang.plan.service.GameService;
 import com.anbang.qipai.xiuxianchang.plan.service.MemberAuthService;
 import com.anbang.qipai.xiuxianchang.plan.service.MemberLoginLimitRecordService;
@@ -126,7 +121,8 @@ public class GamePlayController {
 		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
@@ -157,7 +153,6 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
-					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -183,9 +178,7 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
-					joinSuccess = false;
-				} catch (MemberHasJoinGameRoomException e) {
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
 				if (joinSuccess) {
@@ -197,7 +190,6 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
-					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -213,13 +205,9 @@ public class GamePlayController {
 			lawNames.add("dpwf");
 			try {
 				gameRoom = gameService.buildRamjGameRoom(memberId, lawNames);
-			} catch (NoServerAvailableForGameException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NoServerAvailableForGameException");
-				return vo;
-			} catch (IllegalGameLawsException e) {
-				vo.setSuccess(false);
-				vo.setMsg("IllegalGameLawsException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.saveGameRoom(gameRoom);
@@ -238,6 +226,11 @@ public class GamePlayController {
 				ContentResponse res = req.send();
 				String resJson = new String(res.getContent());
 				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
 				resData = (Map) resVo.getData();
 				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
 			} catch (Exception e) {
@@ -248,13 +241,9 @@ public class GamePlayController {
 			try {
 				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
 						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NumberFormatException");
-				return vo;
-			} catch (GameRoomHasExistAlreadyException e) {
-				vo.setSuccess(false);
-				vo.setMsg("GameRoomHasExistAlreadyException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.createGameRoom(gameRoom, memberId);
@@ -264,7 +253,6 @@ public class GamePlayController {
 			data.put("gameId", gameRoom.getServerGame().getGameId());
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
-			System.out.println(data);
 			vo.setData(data);
 			ruianGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
@@ -308,7 +296,8 @@ public class GamePlayController {
 		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
@@ -364,9 +353,7 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
-					joinSuccess = false;
-				} catch (MemberHasJoinGameRoomException e) {
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
 				if (joinSuccess) {
@@ -393,13 +380,9 @@ public class GamePlayController {
 			lawNames.add("spfb");
 			try {
 				gameRoom = gameService.buildFpmjGameRoom(memberId, lawNames);
-			} catch (NoServerAvailableForGameException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NoServerAvailableForGameException");
-				return vo;
-			} catch (IllegalGameLawsException e) {
-				vo.setSuccess(false);
-				vo.setMsg("IllegalGameLawsException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.saveGameRoom(gameRoom);
@@ -420,6 +403,11 @@ public class GamePlayController {
 				ContentResponse res = req.send();
 				String resJson = new String(res.getContent());
 				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
 				resData = (Map) resVo.getData();
 				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
 			} catch (Exception e) {
@@ -430,13 +418,9 @@ public class GamePlayController {
 			try {
 				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
 						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NumberFormatException");
-				return vo;
-			} catch (GameRoomHasExistAlreadyException e) {
-				vo.setSuccess(false);
-				vo.setMsg("GameRoomHasExistAlreadyException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.createGameRoom(gameRoom, memberId);
@@ -489,7 +473,8 @@ public class GamePlayController {
 		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
@@ -545,9 +530,7 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
-					joinSuccess = false;
-				} catch (MemberHasJoinGameRoomException e) {
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
 				if (joinSuccess) {
@@ -576,13 +559,9 @@ public class GamePlayController {
 			lawNames.add("gsf");
 			try {
 				gameRoom = gameService.buildWzmjGameRoom(memberId, lawNames);
-			} catch (NoServerAvailableForGameException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NoServerAvailableForGameException");
-				return vo;
-			} catch (IllegalGameLawsException e) {
-				vo.setSuccess(false);
-				vo.setMsg("IllegalGameLawsException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.saveGameRoom(gameRoom);
@@ -605,6 +584,11 @@ public class GamePlayController {
 				ContentResponse res = req.send();
 				String resJson = new String(res.getContent());
 				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
 				resData = (Map) resVo.getData();
 				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
 			} catch (Exception e) {
@@ -615,13 +599,9 @@ public class GamePlayController {
 			try {
 				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
 						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NumberFormatException");
-				return vo;
-			} catch (GameRoomHasExistAlreadyException e) {
-				vo.setSuccess(false);
-				vo.setMsg("GameRoomHasExistAlreadyException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.createGameRoom(gameRoom, memberId);
@@ -674,7 +654,8 @@ public class GamePlayController {
 		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
@@ -730,9 +711,7 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
-					joinSuccess = false;
-				} catch (MemberHasJoinGameRoomException e) {
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
 				if (joinSuccess) {
@@ -760,13 +739,9 @@ public class GamePlayController {
 			lawNames.add("qingyise");
 			try {
 				gameRoom = gameService.buildDpmjGameRoom(memberId, lawNames);
-			} catch (NoServerAvailableForGameException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NoServerAvailableForGameException");
-				return vo;
-			} catch (IllegalGameLawsException e) {
-				vo.setSuccess(false);
-				vo.setMsg("IllegalGameLawsException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.saveGameRoom(gameRoom);
@@ -789,6 +764,11 @@ public class GamePlayController {
 				ContentResponse res = req.send();
 				String resJson = new String(res.getContent());
 				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
 				resData = (Map) resVo.getData();
 				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
 			} catch (Exception e) {
@@ -799,13 +779,9 @@ public class GamePlayController {
 			try {
 				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
 						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NumberFormatException");
-				return vo;
-			} catch (GameRoomHasExistAlreadyException e) {
-				vo.setSuccess(false);
-				vo.setMsg("GameRoomHasExistAlreadyException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.createGameRoom(gameRoom, memberId);
@@ -858,7 +834,8 @@ public class GamePlayController {
 		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
@@ -914,9 +891,7 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
-					joinSuccess = false;
-				} catch (MemberHasJoinGameRoomException e) {
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
 				if (joinSuccess) {
@@ -943,13 +918,9 @@ public class GamePlayController {
 			lawNames.add("jiu");
 			try {
 				gameRoom = gameService.buildWzskGameRoom(memberId, lawNames);
-			} catch (NoServerAvailableForGameException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NoServerAvailableForGameException");
-				return vo;
-			} catch (IllegalGameLawsException e) {
-				vo.setSuccess(false);
-				vo.setMsg("IllegalGameLawsException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.saveGameRoom(gameRoom);
@@ -972,6 +943,11 @@ public class GamePlayController {
 				ContentResponse res = req.send();
 				String resJson = new String(res.getContent());
 				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
 				resData = (Map) resVo.getData();
 				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
 			} catch (Exception e) {
@@ -982,13 +958,9 @@ public class GamePlayController {
 			try {
 				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
 						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NumberFormatException");
-				return vo;
-			} catch (GameRoomHasExistAlreadyException e) {
-				vo.setSuccess(false);
-				vo.setMsg("GameRoomHasExistAlreadyException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.createGameRoom(gameRoom, memberId);
@@ -1042,7 +1014,8 @@ public class GamePlayController {
 		boolean joinSuccess = false;// 是否加入成功
 		if (gameRoom != null) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			boolean backSuccess = false;// 是否返回成功
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
@@ -1073,7 +1046,6 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
-					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -1099,9 +1071,7 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
-					joinSuccess = false;
-				} catch (MemberHasJoinGameRoomException e) {
+				} catch (Exception e) {
 					joinSuccess = false;
 				}
 				if (joinSuccess) {
@@ -1113,7 +1083,6 @@ public class GamePlayController {
 					data.put("token", resData.get("token"));
 					data.put("gameId", serverGameId);
 					data.put("game", gameRoom.getGame());
-					System.out.println(data);
 					vo.setData(data);
 					return vo;
 				}
@@ -1128,13 +1097,9 @@ public class GamePlayController {
 			lawNames.add("yf");
 			try {
 				gameRoom = gameService.buildDdzGameRoom(memberId, lawNames);
-			} catch (NoServerAvailableForGameException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NoServerAvailableForGameException");
-				return vo;
-			} catch (IllegalGameLawsException e) {
-				vo.setSuccess(false);
-				vo.setMsg("IllegalGameLawsException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.saveGameRoom(gameRoom);
@@ -1153,6 +1118,11 @@ public class GamePlayController {
 				ContentResponse res = req.send();
 				String resJson = new String(res.getContent());
 				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
 				resData = (Map) resVo.getData();
 				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
 			} catch (Exception e) {
@@ -1163,13 +1133,9 @@ public class GamePlayController {
 			try {
 				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
 						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
-			} catch (NumberFormatException e) {
+			} catch (Exception e) {
 				vo.setSuccess(false);
-				vo.setMsg("NumberFormatException");
-				return vo;
-			} catch (GameRoomHasExistAlreadyException e) {
-				vo.setSuccess(false);
-				vo.setMsg("GameRoomHasExistAlreadyException");
+				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
 			gameService.createGameRoom(gameRoom, memberId);
@@ -1179,7 +1145,6 @@ public class GamePlayController {
 			data.put("gameId", gameRoom.getServerGame().getGameId());
 			data.put("token", resData.get("token"));
 			data.put("game", gameRoom.getGame());
-			System.out.println(data);
 			vo.setData(data);
 			doudizhuGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(), gameRoom.getGame().name());
 			return vo;
@@ -1217,7 +1182,8 @@ public class GamePlayController {
 		GameRoom gameRoom = gameService.findGameRoomByGame(game, gameId);
 		if (gameRoom != null && !gameRoom.isFull()) {
 			// 处理如果是自己暂时离开的房间
-			String serverGameId = gameRoom.getServerGame().getGameId();
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
 			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
 					serverGameId, memberId);
 			if (memberGameRoom != null) {
@@ -1276,13 +1242,9 @@ public class GamePlayController {
 				}
 				try {
 					gameRoomCmdService.joinGame(serverGameId, memberId);
-				} catch (GameRoomNotFoundException e) {
+				} catch (Exception e) {
 					vo.setSuccess(false);
-					vo.setMsg("GameRoomNotFoundException");
-					return vo;
-				} catch (MemberHasJoinGameRoomException e) {
-					vo.setSuccess(false);
-					vo.setMsg("MemberHasJoinGameRoomException");
+					vo.setMsg(e.getClass().getName());
 					return vo;
 				}
 				gameService.joinGameRoom(gameRoom, memberId);
@@ -1329,7 +1291,11 @@ public class GamePlayController {
 			Game game = room.getGame();
 			String serverGameId = room.getServerGame().getGameId();
 			gameIdMap.get(game).add(serverGameId);
-			gameRoomCmdService.removeGameRoom(serverGameId);
+			try {
+				gameRoomCmdService.removeGameRoom(serverGameId);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			gameService.finishMemberGameRoom(game, serverGameId);
 		}
 		gameService.expireGameRoom(roomIds);

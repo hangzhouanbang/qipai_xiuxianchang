@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 
-import com.anbang.qipai.xiuxianchang.cqrs.c.domain.member.MemberNotFoundException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.MemberGoldCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
 import com.anbang.qipai.xiuxianchang.msg.channel.sink.WenzhouMajiangResultSink;
@@ -86,7 +85,7 @@ public class WenzhouMajiangResultMsgReceiver {
 										pr.getPlayerId(), pr.getTotalScore(), "xiuxianchang ju result",
 										majiangHistoricalResult.getFinishTime());
 								memberGoldQueryService.withdraw(pr.getPlayerId(), accountingRecord);
-							} catch (MemberNotFoundException e) {
+							} catch (Exception e) {
 								e.printStackTrace();
 							}
 						});
