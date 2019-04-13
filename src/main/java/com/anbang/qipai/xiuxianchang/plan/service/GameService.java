@@ -241,6 +241,46 @@ public class GameService {
 	}
 
 	/**
+	 * 创建茶苑双扣房间
+	 */
+	public GameRoom buildCyskGameRoom(String memberId, List<String> lawNames)
+			throws NoServerAvailableForGameException, IllegalGameLawsException {
+		List<GameServer> allServers = gameServerDao.findByGame(Game.chayuanShuangkou);
+		if (allServers == null || allServers.isEmpty()) {
+			throw new NoServerAvailableForGameException();
+		}
+		Random r = new Random();
+		GameServer gameServer = allServers.get(r.nextInt(allServers.size()));
+		ServerGame serverGame = new ServerGame();
+		serverGame.setServer(gameServer);
+		GameRoom gameRoom = new GameRoom();
+		gameRoom.setServerGame(serverGame);
+
+		List<GameLaw> laws = new ArrayList<>();
+		lawNames.forEach((name) -> laws.add(gameLawDao.findByGameAndName(Game.chayuanShuangkou, name)));
+		gameRoom.setLaws(laws);
+		if (!gameRoom.validateLaws()) {
+			throw new IllegalGameLawsException();
+		}
+
+		if (lawNames.contains("er")) {
+			gameRoom.setPlayersCountPerJu(2);
+		} else if (lawNames.contains("sanr")) {
+			gameRoom.setPlayersCountPerJu(3);
+		} else if (lawNames.contains("sir")) {
+			gameRoom.setPlayersCountPerJu(4);
+		} else {
+			gameRoom.setPlayersCountPerJu(4);
+		}
+
+		gameRoom.setDeadlineTime(System.currentTimeMillis() + 2 * 60 * 60 * 1000);
+		gameRoom.setGame(Game.chayuanShuangkou);
+
+		gameRoom.setCreateTime(System.currentTimeMillis());
+		return gameRoom;
+	}
+
+	/**
 	 * 创建斗地主房间
 	 */
 	public GameRoom buildDdzGameRoom(String memberId, List<String> lawNames)

@@ -22,5 +22,7 @@ public enum Game {
 
 	paodekuai,
 
-	daboluo
+	daboluo,
+
+	chayuanShuangkou
 }

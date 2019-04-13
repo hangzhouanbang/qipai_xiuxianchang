@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.GameRoomCmdService;
 import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldAccountDbo;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
+import com.anbang.qipai.xiuxianchang.msg.service.ChayuanShuangkouGameRoomMsgService;
 import com.anbang.qipai.xiuxianchang.msg.service.DianpaoGameRoomMsgService;
 import com.anbang.qipai.xiuxianchang.msg.service.DoudizhuGameRoomMsgService;
 import com.anbang.qipai.xiuxianchang.msg.service.FangpaoGameRoomMsgService;
@@ -31,6 +32,7 @@ import com.anbang.qipai.xiuxianchang.plan.bean.MemberLoginLimitRecord;
 import com.anbang.qipai.xiuxianchang.plan.service.GameService;
 import com.anbang.qipai.xiuxianchang.plan.service.MemberAuthService;
 import com.anbang.qipai.xiuxianchang.plan.service.MemberLoginLimitRecordService;
+import com.anbang.qipai.xiuxianchang.web.fb.CyskLawsFB;
 import com.anbang.qipai.xiuxianchang.web.fb.DdzLawsFB;
 import com.anbang.qipai.xiuxianchang.web.fb.DpmjLawsFB;
 import com.anbang.qipai.xiuxianchang.web.fb.FpmjLawsFB;
@@ -76,6 +78,9 @@ public class GamePlayController {
 
 	@Autowired
 	private WenzhouShuangkouGameRoomMsgService wenzhouShuangkouGameRoomMsgService;
+
+	@Autowired
+	private ChayuanShuangkouGameRoomMsgService chayuanShuangkouGameRoomMsgService;
 
 	@Autowired
 	private DoudizhuGameRoomMsgService doudizhuGameRoomMsgService;
@@ -982,7 +987,183 @@ public class GamePlayController {
 	}
 
 	/**
-	 * 加入温州双扣房间
+	 * 加入茶苑双扣房间
+	 */
+	@RequestMapping(value = "/join_cysk_room")
+	public CommonVO joinCyskRoom(String token) {
+		CommonVO vo = new CommonVO();
+		String memberId = memberAuthService.getMemberIdBySessionId(token);
+		if (memberId == null) {
+			vo.setSuccess(false);
+			vo.setMsg("invalid token");
+			return vo;
+		}
+		MemberLoginLimitRecord loginLimitRecord = memberLoginLimitRecordService.findByMemberId(memberId, true);
+		if (loginLimitRecord != null) {
+			vo.setSuccess(false);
+			vo.setMsg("login limited");
+			return vo;
+		}
+		MemberGoldAccountDbo account = memberGoldQueryService.findMemberGoldAccount(memberId);
+		if (account == null || account.getBalance() < 1500) {
+			vo.setSuccess(false);
+			vo.setMsg("gold insufficient");
+			return vo;
+		}
+		Random r = new Random();
+		List<GameRoom> gameRoomList = gameService.findNotFullGameRoom(Game.chayuanShuangkou);
+		GameRoom gameRoom = null;
+		if (gameRoomList != null && !gameRoomList.isEmpty()) {
+			gameRoom = gameRoomList.get(r.nextInt(gameRoomList.size()));
+		}
+		boolean joinSuccess = false;// 是否加入成功
+		if (gameRoom != null) {
+			// 处理如果是自己暂时离开的房间
+			String serverGameId = "";
+			serverGameId = gameRoom.getServerGame().getGameId();
+			boolean backSuccess = false;// 是否返回成功
+			MemberGameRoom memberGameRoom = gameService.findMemberGameRoomByGameAndMemberId(gameRoom.getGame(),
+					serverGameId, memberId);
+			if (memberGameRoom != null) {
+				// 游戏服务器rpc返回房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/backtogame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						backSuccess = true;
+					} else {
+						backSuccess = false;
+					}
+				} catch (Exception e) {
+					backSuccess = false;
+				}
+				if (backSuccess) {
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			} else {
+				// 游戏服务器rpc加入房间
+				GameServer gameServer = gameRoom.getServerGame().getServer();
+				Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/joingame");
+				req.param("playerId", memberId);
+				req.param("gameId", serverGameId);
+				Map resData = null;
+				try {
+					ContentResponse res = req.send();
+					String resJson = new String(res.getContent());
+					CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+					if (resVo.isSuccess()) {
+						resData = (Map) resVo.getData();
+						joinSuccess = true;
+					} else {
+						joinSuccess = false;
+					}
+				} catch (Exception e) {
+					joinSuccess = false;
+				}
+				try {
+					gameRoomCmdService.joinGame(serverGameId, memberId);
+				} catch (Exception e) {
+					joinSuccess = false;
+				}
+				if (joinSuccess) {
+					gameService.joinGameRoom(gameRoom, memberId);
+
+					Map data = new HashMap();
+					data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+					data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+					data.put("token", resData.get("token"));
+					data.put("gameId", serverGameId);
+					data.put("game", gameRoom.getGame());
+					vo.setData(data);
+					return vo;
+				}
+			}
+		}
+		if (!joinSuccess) {// 加入失败,创建房间
+			// 创建玩法
+			List<String> lawNames = new ArrayList<>();
+			lawNames.add("yj");
+			lawNames.add("sir");
+			lawNames.add("qianbian");
+			lawNames.add("jiu");
+			try {
+				gameRoom = gameService.buildCyskGameRoom(memberId, lawNames);
+			} catch (Exception e) {
+				vo.setSuccess(false);
+				vo.setMsg(e.getClass().getName());
+				return vo;
+			}
+			gameService.saveGameRoom(gameRoom);
+			// 游戏服务器rpc，需要手动httpclientrpc
+			GameServer gameServer = gameRoom.getServerGame().getServer();
+			CyskLawsFB fb = new CyskLawsFB(lawNames);
+			// 远程调用游戏服务器的newgame
+			Request req = httpClient.newRequest(gameServer.getHttpUrl() + "/game/newgame_leave_quit");
+			req.param("playerId", memberId);
+			req.param("panshu", fb.getPanshu());
+			req.param("renshu", fb.getRenshu());
+			req.param("bx", fb.getBx());
+			req.param("fapai", fb.getFapai());
+			req.param("shuangming", fb.getShuangming());
+			Map resData;
+			try {
+				ContentResponse res = req.send();
+				String resJson = new String(res.getContent());
+				CommonVO resVo = gson.fromJson(resJson, CommonVO.class);
+				if (!resVo.isSuccess()) {
+					vo.setSuccess(false);
+					vo.setMsg("SysException");
+					return vo;
+				}
+				resData = (Map) resVo.getData();
+				gameRoom.getServerGame().setGameId((String) resData.get("gameId"));
+			} catch (Exception e) {
+				vo.setSuccess(false);
+				vo.setMsg("SysException");
+				return vo;
+			}
+			try {
+				gameRoomCmdService.createGame(gameRoom.getServerGame().getGameId(), memberId, gameRoom.getGame(),
+						Integer.valueOf(fb.getRenshu()), System.currentTimeMillis());
+			} catch (Exception e) {
+				vo.setSuccess(false);
+				vo.setMsg(e.getClass().getName());
+				return vo;
+			}
+			gameService.createGameRoom(gameRoom, memberId);
+			Map data = new HashMap();
+			data.put("httpUrl", gameRoom.getServerGame().getServer().getHttpUrl());
+			data.put("wsUrl", gameRoom.getServerGame().getServer().getWsUrl());
+			data.put("gameId", gameRoom.getServerGame().getGameId());
+			data.put("token", resData.get("token"));
+			data.put("game", gameRoom.getGame());
+			vo.setData(data);
+			chayuanShuangkouGameRoomMsgService.createGameRoom(gameRoom.getServerGame().getGameId(),
+					gameRoom.getGame().name());
+			return vo;
+		}
+		// 全部失败
+		vo.setSuccess(false);
+		vo.setMsg("NoServerAvailableForGameException");
+		return vo;
+	}
+
+	/**
+	 * 加入斗地主房间
 	 */
 	@RequestMapping(value = "/join_ddz_room")
 	public CommonVO joinDdzRoom(String token) {
@@ -1273,18 +1454,9 @@ public class GamePlayController {
 		List<GameRoom> roomList = gameService.findExpireGameRoom(deadlineTime);
 		List<String> roomIds = new ArrayList<>();
 		Map<Game, List<String>> gameIdMap = new HashMap<>();
-		List<String> ruianGameIds = new ArrayList<>();
-		List<String> fangpaoGameIds = new ArrayList<>();
-		List<String> wenzhouGameIds = new ArrayList<>();
-		List<String> dianpaoGameIds = new ArrayList<>();
-		List<String> wenzhouSKGameIds = new ArrayList<>();
-		List<String> doudizhuGameIds = new ArrayList<>();
-		gameIdMap.put(Game.ruianMajiang, ruianGameIds);
-		gameIdMap.put(Game.fangpaoMajiang, fangpaoGameIds);
-		gameIdMap.put(Game.wenzhouMajiang, wenzhouGameIds);
-		gameIdMap.put(Game.dianpaoMajiang, dianpaoGameIds);
-		gameIdMap.put(Game.wenzhouShuangkou, wenzhouSKGameIds);
-		gameIdMap.put(Game.doudizhu, doudizhuGameIds);
+		for (Game game : Game.values()) {
+			gameIdMap.put(game, new ArrayList<>());
+		}
 		for (GameRoom room : roomList) {
 			String id = room.getId();
 			roomIds.add(id);
@@ -1299,11 +1471,12 @@ public class GamePlayController {
 			gameService.finishMemberGameRoom(game, serverGameId);
 		}
 		gameService.expireGameRoom(roomIds);
-		ruianGameRoomMsgService.removeGameRoom(ruianGameIds);
-		fangpaoGameRoomMsgService.removeGameRoom(fangpaoGameIds);
-		wenzhouGameRoomMsgService.removeGameRoom(fangpaoGameIds);
-		dianpaoGameRoomMsgService.removeGameRoom(dianpaoGameIds);
-		wenzhouShuangkouGameRoomMsgService.removeGameRoom(wenzhouSKGameIds);
-		doudizhuGameRoomMsgService.removeGameRoom(doudizhuGameIds);
+		ruianGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.ruianMajiang));
+		fangpaoGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.fangpaoMajiang));
+		wenzhouGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.wenzhouMajiang));
+		dianpaoGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.dianpaoMajiang));
+		wenzhouShuangkouGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.wenzhouShuangkou));
+		doudizhuGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.doudizhu));
+		chayuanShuangkouGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.chayuanShuangkou));
 	}
 }
