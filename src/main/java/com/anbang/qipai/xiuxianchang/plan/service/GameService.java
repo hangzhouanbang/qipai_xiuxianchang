@@ -397,6 +397,10 @@ public class GameService {
 		memberGameRoomDao.remove(game, serverGameId, memberId);
 	}
 
+	public List<MemberGameRoom> findPlayingMemberGameRoom(int page, int size) {
+		return memberGameRoomDao.find(page, size);
+	}
+
 	public GameRoom findGameRoomByGame(Game game, String gameId) {
 		return gameRoomDao.findGameRoomByGame(game, gameId);
 	}
@@ -413,6 +417,13 @@ public class GameService {
 	 */
 	public void finishMemberGameRoom(Game game, String serverGameId) {
 		memberGameRoomDao.remove(game, serverGameId);
+	}
+
+	/**
+	 * 延长游戏房间
+	 */
+	public void delayGameRoom(Game game, String serverGameId, long deadlineTime) {
+		gameRoomDao.updateGameRoomDeadlineTime(game, serverGameId, deadlineTime);
 	}
 
 	public MemberGameRoom findMemberGameRoomByGameAndMemberId(Game game, String gameId, String memberId) {

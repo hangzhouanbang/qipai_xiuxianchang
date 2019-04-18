@@ -57,4 +57,12 @@ public class MongodbMemberGameRoomDao implements MemberGameRoomDao {
 		return mongoTemplate.find(query, MemberGameRoom.class);
 	}
 
+	@Override
+	public List<MemberGameRoom> find(int page, int size) {
+		Query query = new Query();
+		query.skip((page - 1) * size);
+		query.limit(size);
+		return mongoTemplate.find(query, MemberGameRoom.class);
+	}
+
 }

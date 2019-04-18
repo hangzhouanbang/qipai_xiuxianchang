@@ -86,5 +86,12 @@ public class WenzhouShuangkouGameMsgReceiver {
 			gameService.updateGameRoomFinishedByGame(Game.wenzhouShuangkou, gameId, true);
 			gameService.finishMemberGameRoom(Game.wenzhouShuangkou, gameId);
 		}
+		if ("game delay".equals(msg)) {// 游戏延时
+			Map data = (Map) mo.getData();
+			String gameId = (String) data.get("gameId");
+			GameRoom gameRoom = gameService.findGameRoomByGame(Game.wenzhouShuangkou, gameId);
+			// 延时1小时
+			gameService.delayGameRoom(Game.wenzhouShuangkou, gameId, gameRoom.getDeadlineTime() + 1 * 60 * 60 * 1000);
+		}
 	}
 }

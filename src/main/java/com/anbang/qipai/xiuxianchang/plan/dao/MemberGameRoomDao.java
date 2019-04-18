@@ -17,4 +17,6 @@ public interface MemberGameRoomDao {
 
 	List<MemberGameRoom> findByGame(Game game, String gameId);
 
+	List<MemberGameRoom> find(int page, int size);
+
 }

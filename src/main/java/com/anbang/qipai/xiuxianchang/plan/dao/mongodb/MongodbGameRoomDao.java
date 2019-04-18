@@ -87,4 +87,14 @@ public class MongodbGameRoomDao implements GameRoomDao {
 		mongoTemplate.updateFirst(query, update, GameRoom.class);
 	}
 
+	@Override
+	public void updateGameRoomDeadlineTime(Game game, String serverGameId, long deadlineTime) {
+		Query query = new Query();
+		query.addCriteria(
+				Criteria.where("game").is(game).andOperator(Criteria.where("serverGame.gameId").is(serverGameId)));
+		Update update = new Update();
+		update.set("deadlineTime", deadlineTime);
+		mongoTemplate.updateFirst(query, update, GameRoom.class);
+	}
+
 }

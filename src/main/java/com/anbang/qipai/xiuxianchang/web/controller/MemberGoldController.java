@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.anbang.qipai.xiuxianchang.cqrs.c.domain.member.MemberNotFoundException;
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.MemberGoldCmdService;
+import com.anbang.qipai.xiuxianchang.cqrs.q.dbo.MemberGoldRecordDbo;
 import com.anbang.qipai.xiuxianchang.cqrs.q.service.MemberGoldQueryService;
+import com.anbang.qipai.xiuxianchang.msg.service.MemberXiuxianchangGoldMsgService;
 import com.anbang.qipai.xiuxianchang.plan.service.MemberAuthService;
 import com.anbang.qipai.xiuxianchang.web.vo.CommonVO;
 import com.dml.accounting.AccountingRecord;
@@ -25,6 +27,9 @@ public class MemberGoldController {
 
 	@Autowired
 	private MemberGoldQueryService memberGoldQueryService;
+
+	@Autowired
+	private MemberXiuxianchangGoldMsgService memberXiuxianchangGoldMsgService;
 
 	/**
 	 * 玩家申请金币补偿
@@ -46,7 +51,8 @@ public class MemberGoldController {
 		try {
 			AccountingRecord rcd = memberGoldCmdService.giveGoldToMember(memberId, 1500, "compensation for everyday",
 					System.currentTimeMillis());
-			memberGoldQueryService.withdraw(memberId, rcd);
+			MemberGoldRecordDbo dbo = memberGoldQueryService.withdraw(memberId, rcd);
+			memberXiuxianchangGoldMsgService.withdraw(dbo);
 			return vo;
 		} catch (MemberNotFoundException e) {
 			vo.setSuccess(false);
@@ -64,7 +70,8 @@ public class MemberGoldController {
 		try {
 			AccountingRecord rcd = memberGoldCmdService.withdraw(memberId, amount, textSummary,
 					System.currentTimeMillis());
-			memberGoldQueryService.withdraw(memberId, rcd);
+			MemberGoldRecordDbo dbo = memberGoldQueryService.withdraw(memberId, rcd);
+			memberXiuxianchangGoldMsgService.withdraw(dbo);
 			return vo;
 		} catch (InsufficientBalanceException e) {
 			vo.setSuccess(false);
@@ -86,7 +93,8 @@ public class MemberGoldController {
 		try {
 			AccountingRecord rcd = memberGoldCmdService.giveGoldToMember(memberId, amount, textSummary,
 					System.currentTimeMillis());
-			memberGoldQueryService.withdraw(memberId, rcd);
+			MemberGoldRecordDbo dbo = memberGoldQueryService.withdraw(memberId, rcd);
+			memberXiuxianchangGoldMsgService.withdraw(dbo);
 			return vo;
 		} catch (MemberNotFoundException e) {
 			vo.setSuccess(false);
@@ -101,15 +109,16 @@ public class MemberGoldController {
 	@RequestMapping(value = "/members_withdraw")
 	public CommonVO members_withdraw(@RequestBody String[] memberIds, int amount, String textSummary) {
 		CommonVO vo = new CommonVO();
-		try {
-			for (String memberId : memberIds) {
+		for (String memberId : memberIds) {
+			try {
 				AccountingRecord rcd = memberGoldCmdService.withdraw(memberId, amount, textSummary,
 						System.currentTimeMillis());
-				memberGoldQueryService.withdraw(memberId, rcd);
+				MemberGoldRecordDbo dbo = memberGoldQueryService.withdraw(memberId, rcd);
+				memberXiuxianchangGoldMsgService.withdraw(dbo);
+			} catch (Exception e) {
+				vo.setSuccess(false);
+				vo.setMsg(e.getClass().getName());
 			}
-		} catch (Exception e) {
-			vo.setSuccess(false);
-			vo.setMsg(e.getClass().getName());
 		}
 		return vo;
 	}
@@ -120,15 +129,16 @@ public class MemberGoldController {
 	@RequestMapping(value = "/members_givegold")
 	public CommonVO members_giveGold(@RequestBody String[] memberIds, int amount, String textSummary) {
 		CommonVO vo = new CommonVO();
-		try {
-			for (String memberId : memberIds) {
+		for (String memberId : memberIds) {
+			try {
 				AccountingRecord rcd = memberGoldCmdService.giveGoldToMember(memberId, amount, textSummary,
 						System.currentTimeMillis());
-				memberGoldQueryService.withdraw(memberId, rcd);
+				MemberGoldRecordDbo dbo = memberGoldQueryService.withdraw(memberId, rcd);
+				memberXiuxianchangGoldMsgService.withdraw(dbo);
+			} catch (Exception e) {
+				vo.setSuccess(false);
+				vo.setMsg(e.getClass().getName());
 			}
-		} catch (Exception e) {
-			vo.setSuccess(false);
-			vo.setMsg(e.getClass().getName());
 		}
 		return vo;
 	}

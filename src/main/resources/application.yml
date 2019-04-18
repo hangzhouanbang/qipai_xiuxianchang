@@ -3,6 +3,7 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/qipai_xiuxianchang
 
+
   cloud:
     stream:
       kafka:
@@ -83,6 +84,16 @@ spring:
                   ms: 5
                 batch:
                   size: 16384
+          memberXiuxianchangGolds:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
                   
       bindings:
         ruianGameRoom:
@@ -117,6 +128,11 @@ spring:
             partitionCount: 1
         doudizhuGameRoom:
           destination: doudizhuGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        memberXiuxianchangGolds:
+          destination: memberXiuxianchangGolds
           contentType: application/json
           producer:
             partitionCount: 1

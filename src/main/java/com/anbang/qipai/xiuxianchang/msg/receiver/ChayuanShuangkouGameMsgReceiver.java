@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 
 @EnableBinding(ChayuanShuangkouGameSink.class)
 public class ChayuanShuangkouGameMsgReceiver {
+
 	@Autowired
 	private GameService gameService;
 
@@ -85,6 +86,13 @@ public class ChayuanShuangkouGameMsgReceiver {
 			String gameId = (String) data.get("gameId");
 			gameService.updateGameRoomFinishedByGame(Game.chayuanShuangkou, gameId, true);
 			gameService.finishMemberGameRoom(Game.chayuanShuangkou, gameId);
+		}
+		if ("game delay".equals(msg)) {// 游戏延时
+			Map data = (Map) mo.getData();
+			String gameId = (String) data.get("gameId");
+			GameRoom gameRoom = gameService.findGameRoomByGame(Game.chayuanShuangkou, gameId);
+			// 延时1小时
+			gameService.delayGameRoom(Game.chayuanShuangkou, gameId, gameRoom.getDeadlineTime() + 1 * 60 * 60 * 1000);
 		}
 	}
 }

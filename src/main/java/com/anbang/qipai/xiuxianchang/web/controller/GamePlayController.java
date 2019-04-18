@@ -12,6 +12,7 @@ import org.eclipse.jetty.client.api.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.anbang.qipai.xiuxianchang.cqrs.c.service.GameRoomCmdService;
@@ -40,6 +41,7 @@ import com.anbang.qipai.xiuxianchang.web.fb.RamjLawsFB;
 import com.anbang.qipai.xiuxianchang.web.fb.WzmjLawsFB;
 import com.anbang.qipai.xiuxianchang.web.fb.WzskLawsFB;
 import com.anbang.qipai.xiuxianchang.web.vo.CommonVO;
+import com.anbang.qipai.xiuxianchang.web.vo.MemberPlayingRoomVO;
 import com.google.gson.Gson;
 
 /**
@@ -1446,31 +1448,40 @@ public class GamePlayController {
 	}
 
 	/**
+	 * 后台rpc查询会员游戏房间
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/query_memberplayingroom")
+	public CommonVO queryMemberPlayingRoom(@RequestParam(defaultValue = "1") int page,
+			@RequestParam(defaultValue = "10") int size) {
+		CommonVO vo = new CommonVO();
+		List<MemberGameRoom> roomList = gameService.findPlayingMemberGameRoom(page, size);
+		List<MemberPlayingRoomVO> gameRoomList = new ArrayList<>();
+		roomList.forEach((memberGameRoom) -> {
+			gameRoomList.add(new MemberPlayingRoomVO(memberGameRoom));
+		});
+		vo.setMsg("room list");
+		vo.setData(gameRoomList);
+		return vo;
+	}
+
+	/**
 	 * 房间到时定时器，每1小时
 	 */
 	@Scheduled(cron = "0 0 0/1 * * ?")
 	public void removeGameRoom() {
 		long deadlineTime = System.currentTimeMillis();
 		List<GameRoom> roomList = gameService.findExpireGameRoom(deadlineTime);
-		List<String> roomIds = new ArrayList<>();
 		Map<Game, List<String>> gameIdMap = new HashMap<>();
 		for (Game game : Game.values()) {
 			gameIdMap.put(game, new ArrayList<>());
 		}
 		for (GameRoom room : roomList) {
-			String id = room.getId();
-			roomIds.add(id);
 			Game game = room.getGame();
 			String serverGameId = room.getServerGame().getGameId();
 			gameIdMap.get(game).add(serverGameId);
-			try {
-				gameRoomCmdService.removeGameRoom(serverGameId);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			gameService.finishMemberGameRoom(game, serverGameId);
 		}
-		gameService.expireGameRoom(roomIds);
 		ruianGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.ruianMajiang));
 		fangpaoGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.fangpaoMajiang));
 		wenzhouGameRoomMsgService.removeGameRoom(gameIdMap.get(Game.wenzhouMajiang));
