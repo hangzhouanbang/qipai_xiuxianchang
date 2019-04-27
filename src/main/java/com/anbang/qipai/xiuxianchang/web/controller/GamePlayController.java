@@ -218,7 +218,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			RamjLawsFB fb = new RamjLawsFB(lawNames);
@@ -393,7 +392,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			FpmjLawsFB fb = new FpmjLawsFB(lawNames);
@@ -572,7 +570,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			WzmjLawsFB fb = new WzmjLawsFB(lawNames);
@@ -753,7 +750,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			DpmjLawsFB fb = new DpmjLawsFB(lawNames);
@@ -932,7 +928,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			WzskLawsFB fb = new WzskLawsFB(lawNames);
@@ -1111,7 +1106,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			CyskLawsFB fb = new CyskLawsFB(lawNames);
@@ -1287,7 +1281,6 @@ public class GamePlayController {
 				vo.setMsg(e.getClass().getName());
 				return vo;
 			}
-			gameService.saveGameRoom(gameRoom);
 			// 游戏服务器rpc，需要手动httpclientrpc
 			GameServer gameServer = gameRoom.getServerGame().getServer();
 			DdzLawsFB fb = new DdzLawsFB(lawNames);
