@@ -84,6 +84,26 @@ spring:
                   ms: 5
                 batch:
                   size: 16384
+          daboluoGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
+          paodekuaiGameRoom:
+            producer:
+              configuration:
+                request:
+                  timeout:
+                    ms: 30000
+                linger:
+                  ms: 5
+                batch:
+                  size: 16384
           memberXiuxianchangGolds:
             producer:
               configuration:
@@ -128,6 +148,16 @@ spring:
             partitionCount: 1
         doudizhuGameRoom:
           destination: doudizhuGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        paodekuaiGameRoom:
+          destination: paodekuaiGameRoom
+          contentType: application/json
+          producer:
+            partitionCount: 1
+        daboluoGameRoom:
+          destination: daboluoGameRoom
           contentType: application/json
           producer:
             partitionCount: 1
@@ -249,6 +279,34 @@ spring:
           contentType: application/json
         doudizhuResult:
           destination: doudizhuResult
+          group: qipai-xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        daboluoGame:
+          destination: daboluoGame
+          group: qipai-xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        daboluoResult:
+          destination: daboluoResult
+          group: qipai-xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        paodekuaiGame:
+          destination: paodekuaiGame
+          group: qipai-xiuxianchang
+          consumer:
+            concurrency: 1
+            partitioned: false
+          contentType: application/json
+        paodekuaiResult:
+          destination: paodekuaiResult
           group: qipai-xiuxianchang
           consumer:
             concurrency: 1
